@@ -1,0 +1,773 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>Web — Admin & Reception</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* Design tokens — same names and values as the Figma variables */
+:root {
+  --primary-600: #0B4F6C; --primary-500: #14708F; --primary-100: #E3F1F6; --primary-50: #F1F8FB;
+  --accent-500: #F59E0B; --accent-100: #FEF3C7;
+  --success-500: #16A34A; --success-100: #DCFCE7;
+  --danger-500: #DC2626; --danger-100: #FEE2E2;
+  --warning-500: #D97706; --warning-100: #FEF3C7;
+  --n900: #0F172A; --n700: #334155; --n500: #64748B; --n400: #94A3B8; --n300: #CBD5E1;
+  --n200: #E2E8F0; --n100: #F1F5F9; --n50: #F8FAFC; --white: #FFFFFF;
+  --r-sm: 6px; --r-md: 10px; --r-lg: 16px; --r-full: 999px;
+  --shadow: 0 1px 2px rgba(15,23,42,.06), 0 4px 16px rgba(15,23,42,.06);
+  --seat-w: 36px; --seat-h: 40px; --seat-gap: 8px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: "Cairo", sans-serif; direction: rtl; color: var(--n900); background: #E6ECF1; font-size: 14px; line-height: 22px; }
+.canvas { display: flex; flex-wrap: wrap; gap: 56px 48px; padding: 56px; align-items: flex-start; }
+.canvas-title { width: 100%; font-size: 28px; line-height: 40px; font-weight: 700; color: var(--primary-600); }
+.frame { display: flex; flex-direction: column; gap: 12px; }
+.frame-name { font-size: 13px; font-weight: 600; color: var(--n500); direction: ltr; text-align: right; }
+.toggle { width: 40px; height: 22px; border-radius: 11px; background: var(--n300); position: relative; flex: none; display: inline-block; }
+.toggle::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: var(--white); }
+.toggle.on { background: var(--success-500); }
+.toggle.on::after { left: auto; right: 3px; }
+
+/* Typography */
+.display { font-size: 28px; line-height: 40px; font-weight: 700; }
+.h1 { font-size: 22px; line-height: 34px; font-weight: 700; }
+.h2 { font-size: 18px; line-height: 28px; font-weight: 600; }
+.h3 { font-size: 16px; line-height: 24px; font-weight: 600; }
+.body-strong { font-weight: 600; }
+.caption { font-size: 12px; line-height: 18px; }
+.caption-strong { font-size: 12px; line-height: 18px; font-weight: 600; }
+.muted { color: var(--n500); }
+.subtle { color: var(--n400); }
+.primary-text { color: var(--primary-600); }
+.ltr { direction: ltr; unicode-bidi: isolate; display: inline-block; }
+
+/* Layout helpers */
+.row { display: flex; align-items: center; gap: 8px; }
+.col { display: flex; flex-direction: column; gap: 8px; }
+.between { justify-content: space-between; }
+.grow { flex: 1; min-width: 0; }
+.gap-4 { gap: 4px; } .gap-12 { gap: 12px; } .gap-16 { gap: 16px; } .gap-24 { gap: 24px; }
+.wrap { flex-wrap: wrap; }
+.divider { height: 1px; background: var(--n200); }
+
+/* Icons (injected as inline SVG by ui.js) */
+.ic { display: inline-flex; width: 20px; height: 20px; flex: none; }
+.ic svg { width: 100%; height: 100%; }
+
+/* Buttons */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 48px; padding: 0 24px; border-radius: var(--r-md); font: 600 14px/22px "Cairo"; border: 1.5px solid transparent; white-space: nowrap; }
+.btn-sm { height: 36px; padding: 0 14px; font-size: 12px; }
+.btn-primary { background: var(--primary-600); color: var(--white); }
+.btn-secondary { background: var(--white); color: var(--primary-600); border-color: var(--primary-600); }
+.btn-danger { background: var(--danger-500); color: var(--white); }
+.btn-danger-outline { background: var(--white); color: var(--danger-500); border-color: var(--danger-500); }
+.btn-ghost { background: var(--n100); color: var(--n700); }
+.btn-block { width: 100%; }
+.icon-btn { width: 40px; height: 40px; border-radius: var(--r-md); display: inline-flex; align-items: center; justify-content: center; background: var(--n100); color: var(--n700); flex: none; }
+
+/* Fields */
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field > label { font-size: 12px; line-height: 18px; font-weight: 600; color: var(--n700); }
+.input { height: 46px; border: 1px solid var(--n300); border-radius: var(--r-md); background: var(--white); display: flex; align-items: center; gap: 8px; padding: 0 14px; color: var(--n900); }
+.input .ph { color: var(--n400); }
+.input.focus { border: 1.5px solid var(--primary-500); box-shadow: 0 0 0 3px var(--primary-100); }
+.input .ic { color: var(--n500); width: 18px; height: 18px; }
+.input .val { flex: 1; }
+.helper { font-size: 12px; line-height: 18px; color: var(--n500); }
+
+/* Cards, badges, chips */
+.card { background: var(--white); border-radius: var(--r-lg); box-shadow: var(--shadow); padding: 16px; }
+.card.flat { box-shadow: none; border: 1px solid var(--n200); }
+.badge { display: inline-flex; align-items: center; height: 24px; padding: 0 10px; border-radius: var(--r-full); font-size: 12px; font-weight: 600; white-space: nowrap; }
+.b-pending { background: var(--warning-100); color: var(--warning-500); }
+.b-confirmed { background: var(--success-100); color: var(--success-500); }
+.b-cancelled { background: var(--danger-100); color: var(--danger-500); }
+.b-completed { background: var(--n100); color: var(--n700); }
+.b-info { background: var(--primary-100); color: var(--primary-600); }
+.chip { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 14px; border-radius: var(--r-full); border: 1px solid var(--n300); background: var(--white); color: var(--n700); font-size: 12px; font-weight: 600; white-space: nowrap; }
+.chip.active { background: var(--primary-600); border-color: var(--primary-600); color: var(--white); }
+.tabs { display: flex; background: var(--n100); border-radius: var(--r-md); padding: 4px; gap: 4px; }
+.tab { flex: 1; height: 38px; display: flex; align-items: center; justify-content: center; border-radius: 8px; font-weight: 600; color: var(--n500); }
+.tab.active { background: var(--white); color: var(--primary-600); box-shadow: var(--shadow); }
+.radio { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--n300); flex: none; }
+.radio.on { border: 6px solid var(--primary-600); }
+.check { width: 20px; height: 20px; border-radius: 6px; border: 2px solid var(--n300); flex: none; display: inline-flex; align-items: center; justify-content: center; }
+.check.on { background: var(--primary-600); border-color: var(--primary-600); color: var(--white); }
+.avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--primary-100); color: var(--primary-600); display: inline-flex; align-items: center; justify-content: center; font-weight: 700; flex: none; }
+
+/* Seats and seat map */
+.seat { width: var(--seat-w); height: var(--seat-h); border-radius: 10px 10px 6px 6px; border: 1.5px solid var(--n300); background: var(--white); color: var(--n700); display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; }
+.seat.booked { background: var(--n300); color: var(--n500); }
+.seat.selected { background: var(--primary-600); border-color: var(--primary-600); color: var(--white); }
+.seat.driver { background: var(--n100); border-color: var(--n200); color: var(--n500); }
+.seat.mini { --seat-w: 18px; --seat-h: 18px; border-radius: 5px; }
+.bus { direction: ltr; display: inline-flex; flex-direction: column; gap: var(--seat-gap); padding: 16px; border: 2px solid var(--n200); border-radius: 28px 28px 14px 14px; background: var(--white); }
+.bus-row { display: flex; gap: var(--seat-gap); }
+.aisle { width: calc(var(--seat-w) * .75); }
+.bus-front { display: flex; justify-content: space-between; align-items: center; padding-bottom: 8px; border-bottom: 1px dashed var(--n300); }
+.door { font-size: 11px; color: var(--n400); direction: rtl; }
+.legend { display: flex; gap: 16px; flex-wrap: wrap; }
+.legend .row { gap: 6px; font-size: 12px; color: var(--n700); }
+
+/* ---------- Mobile ---------- */
+.phone { width: 390px; height: 844px; background: var(--n50); border-radius: 32px; overflow: hidden; position: relative; display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(15,23,42,.18); }
+.statusbar { height: 44px; flex: none; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; font-size: 14px; font-weight: 700; direction: ltr; }
+.statusbar .dots { display: flex; gap: 4px; }
+.statusbar .dots span { width: 18px; height: 10px; border-radius: 3px; background: currentColor; opacity: .85; }
+.appbar { height: 56px; flex: none; display: flex; align-items: center; gap: 12px; padding: 0 16px; }
+.appbar .title { flex: 1; font-size: 18px; font-weight: 600; }
+.content { flex: 1; overflow: hidden; padding: 8px 16px 16px; display: flex; flex-direction: column; gap: 16px; }
+.bottombar { flex: none; background: var(--white); padding: 12px 16px 28px; box-shadow: 0 -4px 16px rgba(15,23,42,.06); display: flex; align-items: center; gap: 12px; }
+.tabbar { flex: none; height: 80px; background: var(--white); border-top: 1px solid var(--n200); display: flex; padding: 8px 8px 20px; }
+.tabbar .item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 11px; font-weight: 600; color: var(--n400); }
+.tabbar .item.active { color: var(--primary-600); }
+.hero { background: var(--primary-600); color: var(--white); }
+.route-dot { width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--primary-600); background: var(--white); flex: none; }
+.route-dot.end { background: var(--primary-600); }
+.route-line { width: 2px; height: 22px; background: var(--n300); margin-right: 4px; }
+.datestrip { display: flex; gap: 8px; }
+.datestrip .d { flex: 1; height: 62px; border-radius: var(--r-md); background: var(--white); border: 1px solid var(--n200); display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 11px; color: var(--n500); }
+.datestrip .d b { font-size: 16px; color: var(--n900); }
+.datestrip .d.active { background: var(--primary-600); border-color: var(--primary-600); color: var(--primary-100); }
+.datestrip .d.active b { color: var(--white); }
+.kv { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; }
+.kv span:first-child { color: var(--n500); }
+.kv span:last-child { font-weight: 600; }
+.code-box { border: 2px dashed var(--primary-500); background: var(--primary-50); border-radius: var(--r-lg); padding: 16px; text-align: center; }
+.success-ring { width: 96px; height: 96px; border-radius: 50%; background: var(--success-100); color: var(--success-500); display: flex; align-items: center; justify-content: center; }
+.pay-option { display: flex; align-items: flex-start; gap: 12px; padding: 14px; border: 1.5px solid var(--n200); border-radius: var(--r-lg); background: var(--white); }
+.pay-option.on { border-color: var(--primary-600); background: var(--primary-50); }
+.pay-icon { width: 40px; height: 40px; border-radius: var(--r-md); background: var(--n100); color: var(--n700); display: flex; align-items: center; justify-content: center; flex: none; }
+.pay-option.on .pay-icon { background: var(--primary-600); color: var(--white); }
+.menu-item { display: flex; align-items: center; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--n100); }
+.notice { display: flex; gap: 8px; padding: 12px; border-radius: var(--r-md); background: var(--accent-100); color: #92400E; font-size: 12px; line-height: 18px; }
+.notice.info { background: var(--primary-50); color: var(--primary-600); }
+
+/* ---------- Web ---------- */
+.desktop { width: 1440px; height: 900px; background: var(--n50); display: flex; overflow: hidden; border-radius: 12px; box-shadow: 0 20px 60px rgba(15,23,42,.18); position: relative; }
+.sidebar { width: 256px; flex: none; background: var(--primary-600); color: var(--primary-100); display: flex; flex-direction: column; padding: 20px 16px; gap: 4px; }
+.brand { display: flex; align-items: center; gap: 10px; color: var(--white); font-size: 18px; font-weight: 700; padding: 4px 8px 20px; }
+.brand .logo { width: 40px; height: 40px; border-radius: 12px; background: var(--accent-500); color: var(--primary-600); display: flex; align-items: center; justify-content: center; }
+.nav-label { font-size: 11px; font-weight: 600; color: rgba(227,241,246,.55); padding: 12px 12px 4px; }
+.nav { display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 12px; border-radius: var(--r-md); font-weight: 600; }
+.nav.active { background: rgba(255,255,255,.12); color: var(--white); box-shadow: inset -3px 0 0 var(--accent-500); }
+.side-user { margin-top: auto; display: flex; align-items: center; gap: 10px; padding: 12px; border-radius: var(--r-md); background: rgba(255,255,255,.08); color: var(--white); }
+.side-user .avatar { background: var(--accent-500); color: var(--primary-600); }
+.main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.topbar { height: 72px; flex: none; background: var(--white); border-bottom: 1px solid var(--n200); display: flex; align-items: center; gap: 16px; padding: 0 28px; }
+.topbar .title { flex: 1; }
+.page { flex: 1; padding: 24px 28px; display: flex; flex-direction: column; gap: 20px; overflow: hidden; }
+.stat { flex: 1; background: var(--white); border-radius: var(--r-lg); box-shadow: var(--shadow); padding: 18px 20px; display: flex; gap: 14px; align-items: center; }
+.stat .ico { width: 48px; height: 48px; border-radius: 14px; display: flex; align-items: center; justify-content: center; flex: none; }
+.stat .num { font-size: 24px; line-height: 34px; font-weight: 700; }
+.table { width: 100%; border-collapse: collapse; background: var(--white); }
+.table th { text-align: right; font-size: 12px; font-weight: 600; color: var(--n500); background: var(--n50); padding: 12px 16px; border-bottom: 1px solid var(--n200); white-space: nowrap; }
+.table td { text-align: right; padding: 12px 16px; border-bottom: 1px solid var(--n100); white-space: nowrap; }
+.table tr.sel td { background: var(--primary-50); }
+.table-card { background: var(--white); border-radius: var(--r-lg); box-shadow: var(--shadow); overflow: hidden; }
+.table-head { display: flex; align-items: center; gap: 12px; padding: 16px 20px; border-bottom: 1px solid var(--n200); }
+.toolbar { display: flex; align-items: flex-end; gap: 12px; }
+.toolbar .field { width: 200px; }
+.overlay { position: absolute; inset: 0; background: rgba(15,23,42,.45); display: flex; align-items: center; justify-content: center; }
+.modal { width: 640px; background: var(--white); border-radius: 20px; box-shadow: 0 30px 80px rgba(15,23,42,.3); display: flex; flex-direction: column; }
+.modal-head { display: flex; align-items: center; gap: 12px; padding: 20px 24px; border-bottom: 1px solid var(--n200); }
+.modal-body { padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+.modal-foot { padding: 16px 24px; border-top: 1px solid var(--n200); display: flex; gap: 12px; justify-content: flex-start; }
+.drawer { position: absolute; top: 0; bottom: 0; left: 0; width: 440px; background: var(--white); box-shadow: 0 0 60px rgba(15,23,42,.25); display: flex; flex-direction: column; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+.seg { display: inline-flex; background: var(--n100); border-radius: var(--r-md); padding: 4px; gap: 4px; }
+.seg span { height: 36px; padding: 0 16px; display: flex; align-items: center; border-radius: 8px; font-weight: 600; color: var(--n500); }
+.seg span.active { background: var(--white); color: var(--primary-600); box-shadow: var(--shadow); }
+.bar-chart { display: flex; align-items: flex-end; gap: 14px; height: 200px; padding-top: 8px; }
+.bar-chart .b { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; height: 100%; justify-content: flex-end; font-size: 11px; color: var(--n500); }
+.bar-chart .b i { width: 100%; max-width: 36px; border-radius: 6px 6px 2px 2px; background: var(--primary-500); display: block; }
+.progress { height: 8px; border-radius: 4px; background: var(--n100); overflow: hidden; }
+.progress i { display: block; height: 100%; border-radius: 4px; background: var(--primary-500); }
+.trip-pick { padding: 12px 14px; border: 1.5px solid var(--n200); border-radius: var(--r-md); background: var(--white); display: flex; flex-direction: column; gap: 4px; }
+.trip-pick.on { border-color: var(--primary-600); background: var(--primary-50); }
+.login-art { flex: 1; background: var(--primary-600); color: var(--white); display: flex; flex-direction: column; justify-content: center; padding: 80px; gap: 24px; position: relative; overflow: hidden; }
+.login-art .circle { position: absolute; border-radius: 50%; background: rgba(255,255,255,.06); }
+
+.table td.ltr { display: table-cell; direction: ltr; text-align: right; }
+.table.compact th, .table.compact td { padding: 12px 12px; }
+
+/* #shot: just the screen, no canvas chrome (used to export PNG images) */
+body.shot { background: var(--n50); zoom: 2; }
+body.shot .canvas { padding: 0; gap: 0; }
+body.shot .canvas-title, body.shot .frame-name { display: none; }
+body.shot .frame { gap: 0; }
+body.shot .phone, body.shot .desktop { border-radius: 0; box-shadow: none; }
+
+</style>
+<style>
+  .preview .bus { --seat-w: 22px; --seat-h: 22px; --seat-gap: 5px; padding: 10px; border-radius: 18px 18px 10px 10px; }
+  .preview .seat { font-size: 9px; border-radius: 6px 6px 4px 4px; }
+  .desk-map .bus { --seat-w: 38px; --seat-h: 36px; --seat-gap: 8px; }
+</style>
+</head>
+<body>
+<div class="canvas">
+<div class="canvas-title">لوحة الإدارة والاستقبال — Next.js</div>
+
+<!-- W1. Login -->
+<div class="frame">
+<div class="frame-name">W01 · Staff Login (Admin + Receptionist)</div>
+<div class="desktop">
+  <div style="width:560px;flex:none;background:var(--white);display:flex;flex-direction:column;justify-content:center;padding:0 88px;gap:24px">
+    <div class="brand" style="color:var(--primary-600);padding:0"><span class="logo" style="background:var(--primary-600);color:var(--accent-500)"><i class="ic" data-i="bus" data-s="22"></i></span>رحلتي · لوحة الموظفين</div>
+    <div class="col gap-4"><div class="h1">تسجيل الدخول</div><div class="muted">للإدارة وموظفي الاستقبال. الصلاحيات بتتحدد حسب دور حسابك.</div></div>
+    <div class="field"><label>رقم الهاتف</label><div class="input focus"><i class="ic" data-i="phone" data-s="18"></i><span class="val ltr" style="text-align:right">0944 555 120</span></div></div>
+    <div class="field"><label>كلمة المرور</label><div class="input"><i class="ic" data-i="lock" data-s="18"></i><span class="val">••••••••••</span><i class="ic" data-i="eye" data-s="18"></i></div></div>
+    <span class="btn btn-primary btn-block">دخول</span>
+    <div class="caption muted">نسيت كلمة المرور؟ اطلب من المدير إعادة تعيينها.</div>
+  </div>
+  <div class="login-art">
+    <span class="circle" style="width:520px;height:520px;left:-160px;top:-180px"></span>
+    <span class="circle" style="width:360px;height:360px;right:-120px;bottom:-140px"></span>
+    <span style="width:88px;height:88px;border-radius:24px;background:var(--accent-500);color:var(--primary-600);display:flex;align-items:center;justify-content:center"><i class="ic" data-i="bus" data-s="48"></i></span>
+    <div class="display" style="font-size:40px;line-height:56px;max-width:560px">كل رحلات الشركة وحجوزاتها بمكان واحد</div>
+    <div class="h3" style="font-weight:400;color:var(--primary-100);max-width:520px">أنشئ الرحلات والجداول، احجز للزبائن من الكراج، وأكّد الدفع نقداً أو بشام كاش.</div>
+    <div class="row gap-24" style="margin-top:16px">
+      <div class="col gap-4"><span class="h1">14</span><span class="caption" style="color:var(--primary-100)">محافظة</span></div>
+      <div class="col gap-4"><span class="h1">3</span><span class="caption" style="color:var(--primary-100)">درجات</span></div>
+      <div class="col gap-4"><span class="h1">6</span><span class="caption" style="color:var(--primary-100)">أنواع بولمان</span></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- W2. Booking screen (Receptionist) -->
+<div class="frame">
+<div class="frame-name">W02 · Booking Screen (Receptionist)</div>
+<div class="desktop">
+  <aside class="sidebar" data-role="receptionist" data-active="booking"></aside>
+  <div class="main">
+    <div class="topbar"><div class="title col" style="gap:0"><span class="h2">الحجز السريع</span><span class="caption muted">احجز لزبون من المكتب أو الكراج</span></div><span class="icon-btn"><i class="ic" data-i="bell"></i></span></div>
+    <div class="page">
+      <div class="card toolbar">
+        <div class="field"><label>من</label><div class="input"><span class="val">دمشق</span><i class="ic" data-i="chevron-down" data-s="18"></i></div></div>
+        <span class="icon-btn" style="margin-bottom:3px"><i class="ic" data-i="swap"></i></span>
+        <div class="field"><label>إلى</label><div class="input"><span class="val">حلب</span><i class="ic" data-i="chevron-down" data-s="18"></i></div></div>
+        <div class="field"><label>التاريخ</label><div class="input"><i class="ic" data-i="calendar" data-s="18"></i><span class="val">12/11/2026</span></div></div>
+        <span class="btn btn-primary"><i class="ic" data-i="search" data-s="18"></i>بحث</span>
+      </div>
+      <div class="row gap-16" style="align-items:stretch;flex:1;min-height:0">
+        <div class="card col gap-12" style="width:290px;flex:none">
+          <span class="h3">الرحلات (4)</span>
+          <div class="trip-pick"><div class="row between"><span class="body-strong">07:30 ص</span><span class="caption muted">14 فاضي</span></div><span class="caption muted">درجة أولى · كبير · 65,000 ل.س</span></div>
+          <div class="trip-pick on"><div class="row between"><span class="body-strong">10:00 ص</span><span class="caption" style="color:var(--warning-500)">5 فاضي</span></div><span class="caption muted">درجة أولى · كبير · 65,000 ل.س</span></div>
+          <div class="trip-pick"><div class="row between"><span class="body-strong">01:00 م</span><span class="caption muted">26 فاضي</span></div><span class="caption muted">عادية · كبير · 40,000 ل.س</span></div>
+          <div class="trip-pick" style="opacity:.55"><div class="row between"><span class="body-strong">04:30 م</span><span class="caption">ممتلئة</span></div><span class="caption muted">عادية · متوسط · 40,000 ل.س</span></div>
+        </div>
+        <div class="card col gap-12 desk-map" style="flex:1;align-items:center">
+          <div class="row between" style="align-self:stretch"><span class="h3">دمشق ← حلب · 10:00 ص</span><span class="caption muted">باص <span class="ltr">123-456 دمشق</span> · 2+1 · 33 مقعد</span></div>
+          <div class="legend"><span class="row"><span class="seat mini"></span>متاح</span><span class="row"><span class="seat mini booked"></span>محجوز</span><span class="row"><span class="seat mini selected"></span>محدد</span></div>
+          <div class="bus" data-class="first" data-size="large" data-booked="1,2,3,4,5,6,7,8,9,10,11,12,13,15,16,17,18,19,20,22,23,24,25,26,27,29,30,31" data-selected="14,21"></div>
+        </div>
+        <div class="card col gap-12" style="width:360px;flex:none">
+          <span class="h3">بيانات الحجز</span>
+          <div class="row"><span class="caption-strong muted">المقاعد:</span><span class="chip active">14 ✕</span><span class="chip active">21 ✕</span></div>
+          <div class="field"><label>اسم الزبون</label><div class="input"><span class="val">محمود الحسن</span></div></div>
+          <div class="field"><label>رقم الهاتف</label><div class="input"><span class="val ltr" style="text-align:right">0955 222 781</span></div></div>
+          <div class="field"><label>اسم راكب المقعد 21</label><div class="input focus"><span class="val">سلمى الحسن</span></div></div>
+          <div class="field"><label>طريقة الدفع</label><div class="seg"><span class="active">نقداً</span><span>شام كاش</span></div></div>
+          <div class="divider"></div>
+          <div class="row between"><span class="muted">المجموع (2 × 65,000)</span><span class="h2 primary-text">130,000 ل.س</span></div>
+          <span class="btn btn-primary btn-block"><i class="ic" data-i="check" data-s="18"></i>حجز وتأكيد الدفع</span>
+          <span class="btn btn-secondary btn-block">حجز بانتظار الدفع</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- W3. Bookings list + details -->
+<div class="frame">
+<div class="frame-name">W03 · Bookings + Booking Details</div>
+<div class="desktop">
+  <aside class="sidebar" data-role="receptionist" data-active="bookings"></aside>
+  <div class="main">
+    <div class="topbar"><div class="title h2">الحجوزات</div></div>
+    <div class="page">
+      <div class="toolbar">
+        <div class="field" style="width:280px"><label>بحث</label><div class="input"><i class="ic" data-i="search" data-s="18"></i><span class="val ph">رمز الحجز أو الاسم أو الهاتف</span></div></div>
+        <div class="field"><label>الحالة</label><div class="input"><span class="val">بانتظار الدفع</span><i class="ic" data-i="chevron-down" data-s="18"></i></div></div>
+        <div class="field"><label>التاريخ</label><div class="input"><i class="ic" data-i="calendar" data-s="18"></i><span class="val">12/11/2026</span></div></div>
+      </div>
+      <div class="table-card" style="margin-left:440px">
+        <table class="table compact">
+          <tr><th>الرمز</th><th>الزبون</th><th>الرحلة</th><th>المقاعد</th><th>الدفع</th><th>الحالة</th></tr>
+          <tr class="sel"><td class="body-strong ltr">BK-7F3K2</td><td>سامر الأحمد</td><td>دمشق ← حلب · 01:00 م</td><td>19، 20</td><td>شام كاش</td><td><span class="badge b-pending">بانتظار الدفع</span></td></tr>
+          <tr><td class="body-strong ltr">BK-9QW1T</td><td>لينا قاسم</td><td>دمشق ← حلب · 07:30 ص</td><td>3</td><td>نقداً</td><td><span class="badge b-pending">بانتظار الدفع</span></td></tr>
+          <tr><td class="body-strong ltr">BK-K2L8P</td><td>محمود الحسن</td><td>دمشق ← حلب · 10:00 ص</td><td>14، 21</td><td>نقداً</td><td><span class="badge b-confirmed">مؤكد</span></td></tr>
+          <tr><td class="body-strong ltr">BK-2M9QA</td><td>رنا الأحمد</td><td>دمشق ← حمص · 08:00 ص</td><td>7، 8</td><td>نقداً</td><td><span class="badge b-confirmed">مؤكد</span></td></tr>
+          <tr><td class="body-strong ltr">BK-P0D4S</td><td>خالد يوسف</td><td>دمشق ← اللاذقية · 09:00 ص</td><td>11</td><td>شام كاش</td><td><span class="badge b-confirmed">مؤكد</span></td></tr>
+          <tr><td class="body-strong ltr">BK-Z7Y3M</td><td>هبة سليمان</td><td>دمشق ← حماة · 02:00 م</td><td>25</td><td>نقداً</td><td><span class="badge b-cancelled">ملغى</span></td></tr>
+          <tr><td class="body-strong ltr">BK-B5N6R</td><td>عمر درويش</td><td>دمشق ← طرطوس · 06:00 ص</td><td>2، 3، 4</td><td>نقداً</td><td><span class="badge b-completed">مكتمل</span></td></tr>
+          <tr><td class="body-strong ltr">BK-H3J9E</td><td>ديما الخطيب</td><td>دمشق ← درعا · 11:00 ص</td><td>16</td><td>شام كاش</td><td><span class="badge b-confirmed">مؤكد</span></td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="drawer">
+    <div class="modal-head"><div class="col grow" style="gap:0"><span class="h2 ltr" style="text-align:right">BK-7F3K2</span><span class="caption muted">حجز من التطبيق · 5 تشرين الثاني، 08:14 م</span></div><span class="badge b-pending">بانتظار الدفع</span><span class="icon-btn"><i class="ic" data-i="x"></i></span></div>
+    <div class="modal-body" style="flex:1;gap:12px">
+      <div class="card flat" style="padding:8px 16px">
+        <div class="kv"><span>الزبون</span><span>سامر الأحمد · <span class="ltr">0933 123 456</span></span></div>
+        <div class="kv"><span>الرحلة</span><span>دمشق ← حلب · الخميس 12 · 01:00 م</span></div>
+        <div class="kv"><span>الباص</span><span>عادية · كبير</span></div>
+        <div class="kv"><span>المقعد 19</span><span>سامر الأحمد</span></div>
+        <div class="kv"><span>المقعد 20</span><span>رنا الأحمد</span></div>
+        <div class="kv"><span>المجموع</span><span class="primary-text">80,000 ل.س</span></div>
+      </div>
+      <div class="card flat col gap-12" style="background:var(--primary-50);border-color:var(--primary-100)">
+        <div class="row"><i class="ic primary-text" data-i="wallet"></i><span class="h3">دفع شام كاش</span></div>
+        <div class="kv" style="padding:0"><span>رقم العملية</span><span class="ltr">TX-88213457</span></div>
+        <div class="caption muted">طابق رقم العملية مع سجل محفظة الشركة قبل التأكيد.</div>
+      </div>
+    </div>
+    <div class="modal-foot" style="flex-direction:column">
+      <span class="btn btn-primary btn-block"><i class="ic" data-i="check" data-s="18"></i>تأكيد الدفع</span>
+      <div class="row gap-12"><span class="btn btn-secondary grow"><i class="ic" data-i="seat" data-s="18"></i>تبديل مقعد</span><span class="btn btn-danger-outline grow"><i class="ic" data-i="x" data-s="18"></i>إلغاء الحجز</span></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- W4. Manifest -->
+<div class="frame">
+<div class="frame-name">W04 · Trip Manifest</div>
+<div class="desktop">
+  <aside class="sidebar" data-role="receptionist" data-active="manifest"></aside>
+  <div class="main">
+    <div class="topbar"><div class="title h2">قائمة ركاب الرحلة</div></div>
+    <div class="page">
+      <div class="card row gap-24">
+        <div class="field" style="width:320px"><label>الرحلة</label><div class="input"><span class="val">دمشق ← حلب · الخميس 12 · 10:00 ص</span><i class="ic" data-i="chevron-down" data-s="18"></i></div></div>
+        <div class="col gap-4"><span class="caption muted">الباص</span><span class="body-strong">درجة أولى · كبير · <span class="ltr">123-456 دمشق</span></span></div>
+        <div class="col gap-4" style="width:220px"><span class="caption muted">الإشغال</span><div class="row"><div class="progress grow"><i style="width:85%"></i></div><span class="body-strong">28 / 33</span></div></div>
+        <div class="col gap-4"><span class="caption muted">غير مدفوع</span><span class="body-strong" style="color:var(--warning-500)">3 حجوزات</span></div>
+      </div>
+      <div class="table-card">
+        <table class="table">
+          <tr><th>المقعد</th><th>اسم الراكب</th><th>هاتف الحاجز</th><th>رمز الحجز</th><th>الدفع</th><th>القناة</th><th>الحالة</th></tr>
+          <tr><td class="body-strong">1</td><td>أحمد الشامي</td><td class="ltr">0933 410 220</td><td class="ltr">BK-A1C4D</td><td>نقداً</td><td>الاستقبال</td><td><span class="badge b-confirmed">مؤكد</span></td></tr>
+          <tr><td class="body-strong">2</td><td>مريم الشامي</td><td class="ltr">0933 410 220</td><td class="ltr">BK-A1C4D</td><td>نقداً</td><td>الاستقبال</td><td><span class="badge b-confirmed">مؤكد</span></td></tr>
+          <tr><td class="body-strong">3</td><td>لينا قاسم</td><td class="ltr">0988 117 302</td><td class="ltr">BK-9QW1T</td><td>نقداً</td><td>التطبيق</td><td><span class="badge b-pending">بانتظار الدفع</span></td></tr>
+          <tr><td class="body-strong">4</td><td>فادي منصور</td><td class="ltr">0944 902 117</td><td class="ltr">BK-M3X0V</td><td>شام كاش</td><td>التطبيق</td><td><span class="badge b-confirmed">مؤكد</span></td></tr>
+          <tr><td class="body-strong">5</td><td>يزن العلي</td><td class="ltr">0991 330 845</td><td class="ltr">BK-R8T2Q</td><td>شام كاش</td><td>التطبيق</td><td><span class="badge b-pending">بانتظار الدفع</span></td></tr>
+          <tr><td class="body-strong">6</td><td>نور حداد</td><td class="ltr">0936 228 019</td><td class="ltr">BK-C6V1B</td><td>نقداً</td><td>الاستقبال</td><td><span class="badge b-confirmed">مؤكد</span></td></tr>
+          <tr><td class="body-strong">7</td><td>جود حداد</td><td class="ltr">0936 228 019</td><td class="ltr">BK-C6V1B</td><td>نقداً</td><td>الاستقبال</td><td><span class="badge b-confirmed">مؤكد</span></td></tr>
+          <tr><td class="body-strong">8</td><td>باسل عيسى</td><td class="ltr">0947 551 600</td><td class="ltr">BK-L4K7N</td><td>نقداً</td><td>التطبيق</td><td><span class="badge b-pending">بانتظار الدفع</span></td></tr>
+          <tr><td class="body-strong">9</td><td>سارة خليل</td><td class="ltr">0959 004 713</td><td class="ltr">BK-W2E5R</td><td>شام كاش</td><td>التطبيق</td><td><span class="badge b-confirmed">مؤكد</span></td></tr>
+          <tr><td class="body-strong">10</td><td>وسيم نجار</td><td class="ltr">0966 381 552</td><td class="ltr">BK-T9Y6U</td><td>نقداً</td><td>الاستقبال</td><td><span class="badge b-confirmed">مؤكد</span></td></tr>
+          <tr><td class="body-strong">11</td><td>رهف سعيد</td><td class="ltr">0932 777 140</td><td class="ltr">BK-G1H8J</td><td>نقداً</td><td>التطبيق</td><td><span class="badge b-confirmed">مؤكد</span></td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- W5. Dashboard -->
+<div class="frame">
+<div class="frame-name">W05 · Dashboard (Admin)</div>
+<div class="desktop">
+  <aside class="sidebar" data-role="admin" data-active="dashboard"></aside>
+  <div class="main">
+    <div class="topbar"><div class="title col" style="gap:0"><span class="h2">لوحة التحكم</span><span class="caption muted">الخميس، 5 تشرين الثاني 2026</span></div><span class="btn btn-primary btn-sm"><i class="ic" data-i="plus" data-s="16"></i>رحلة جديدة</span></div>
+    <div class="page">
+      <div class="row gap-16">
+        <div class="stat"><span class="ico" style="background:var(--primary-100);color:var(--primary-600)"><i class="ic" data-i="route" data-s="24"></i></span><div class="col" style="gap:0"><span class="caption muted">رحلات اليوم</span><span class="num">18</span></div></div>
+        <div class="stat"><span class="ico" style="background:var(--success-100);color:var(--success-500)"><i class="ic" data-i="ticket" data-s="24"></i></span><div class="col" style="gap:0"><span class="caption muted">حجوزات اليوم</span><span class="num">214</span></div></div>
+        <div class="stat"><span class="ico" style="background:var(--accent-100);color:var(--warning-500)"><i class="ic" data-i="seat" data-s="24"></i></span><div class="col" style="gap:0"><span class="caption muted">نسبة الإشغال</span><span class="num">78%</span></div></div>
+        <div class="stat"><span class="ico" style="background:var(--primary-600);color:var(--white)"><i class="ic" data-i="money" data-s="24"></i></span><div class="col" style="gap:0"><span class="caption muted">إيرادات اليوم</span><span class="num">11,650,000 <span class="caption">ل.س</span></span></div></div>
+      </div>
+      <div class="row gap-16" style="align-items:stretch;flex:1;min-height:0">
+        <div class="table-card" style="flex:1.6">
+          <div class="table-head"><span class="h3 grow">رحلات اليوم</span><span class="caption-strong primary-text">كل الرحلات</span></div>
+          <table class="table">
+            <tr><th>الوقت</th><th>الخط</th><th>الباص</th><th>الإشغال</th><th>الحالة</th></tr>
+            <tr><td class="body-strong">06:00 ص</td><td>دمشق ← طرطوس</td><td>عادية · كبير</td><td><div class="row"><div class="progress" style="width:110px"><i style="width:100%"></i></div>45/45</div></td><td><span class="badge b-completed">انطلقت</span></td></tr>
+            <tr><td class="body-strong">07:30 ص</td><td>دمشق ← حلب</td><td>درجة أولى · كبير</td><td><div class="row"><div class="progress" style="width:110px"><i style="width:58%"></i></div>19/33</div></td><td><span class="badge b-completed">انطلقت</span></td></tr>
+            <tr><td class="body-strong">08:00 ص</td><td>دمشق ← حمص</td><td>درجة أولى · كبير</td><td><div class="row"><div class="progress" style="width:110px"><i style="width:91%"></i></div>30/33</div></td><td><span class="badge b-info">مجدولة</span></td></tr>
+            <tr><td class="body-strong">10:00 ص</td><td>دمشق ← حلب</td><td>درجة أولى · كبير</td><td><div class="row"><div class="progress" style="width:110px"><i style="width:85%"></i></div>28/33</div></td><td><span class="badge b-info">مجدولة</span></td></tr>
+            <tr><td class="body-strong">11:00 ص</td><td>دمشق ← درعا</td><td>رجال أعمال · متوسط</td><td><div class="row"><div class="progress" style="width:110px"><i style="width:61%"></i></div>11/18</div></td><td><span class="badge b-info">مجدولة</span></td></tr>
+            <tr><td class="body-strong">01:00 م</td><td>دمشق ← حلب</td><td>عادية · كبير</td><td><div class="row"><div class="progress" style="width:110px"><i style="width:42%"></i></div>19/45</div></td><td><span class="badge b-info">مجدولة</span></td></tr>
+            <tr><td class="body-strong">02:00 م</td><td>دمشق ← حماة</td><td>عادية · متوسط</td><td><div class="row"><div class="progress" style="width:110px"><i style="width:70%"></i></div>26/37</div></td><td><span class="badge b-cancelled">ملغاة</span></td></tr>
+          </table>
+        </div>
+        <div class="col gap-16" style="flex:1">
+          <div class="card col gap-12">
+            <div class="row between"><span class="h3">الإيرادات آخر 7 أيام</span><span class="caption muted">مليون ل.س</span></div>
+            <div class="bar-chart">
+              <div class="b"><i style="height:52%"></i>جمعة</div><div class="b"><i style="height:64%"></i>سبت</div><div class="b"><i style="height:58%"></i>أحد</div><div class="b"><i style="height:49%"></i>إثنين</div><div class="b"><i style="height:61%"></i>ثلاثاء</div><div class="b"><i style="height:74%"></i>أربعاء</div><div class="b"><i style="height:86%;background:var(--accent-500)"></i>اليوم</div>
+            </div>
+          </div>
+          <div class="card col gap-12" style="flex:1">
+            <div class="row between"><span class="h3">بانتظار تأكيد الدفع</span><span class="badge b-pending">9</span></div>
+            <div class="row between"><div class="col" style="gap:0"><span class="body-strong">سامر الأحمد</span><span class="caption muted">شام كاش · <span class="ltr">TX-88213457</span></span></div><span class="body-strong">80,000</span></div>
+            <div class="divider"></div>
+            <div class="row between"><div class="col" style="gap:0"><span class="body-strong">لينا قاسم</span><span class="caption muted">نقداً بالمكتب</span></div><span class="body-strong">65,000</span></div>
+            <div class="divider"></div>
+            <div class="row between"><div class="col" style="gap:0"><span class="body-strong">يزن العلي</span><span class="caption muted">شام كاش · <span class="ltr">TX-77100236</span></span></div><span class="body-strong">65,000</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- W6. Buses + add bus modal -->
+<div class="frame">
+<div class="frame-name">W06 · Buses + Add/Edit Bus</div>
+<div class="desktop">
+  <aside class="sidebar" data-role="admin" data-active="buses"></aside>
+  <div class="main">
+    <div class="topbar"><div class="title h2">الباصات</div><span class="btn btn-primary btn-sm"><i class="ic" data-i="plus" data-s="16"></i>باص جديد</span></div>
+    <div class="page">
+      <div class="table-card">
+        <table class="table">
+          <tr><th>رقم اللوحة</th><th>الدرجة</th><th>الحجم</th><th>التوزيع</th><th>المقاعد</th><th>الحالة</th><th></th></tr>
+          <tr><td class="body-strong ltr">123-456 دمشق</td><td>درجة أولى</td><td>كبير</td><td>2+1</td><td>33</td><td><span class="badge b-confirmed">فعّال</span></td><td><i class="ic subtle" data-i="edit" data-s="18"></i></td></tr>
+          <tr><td class="body-strong ltr">778-210 دمشق</td><td>عادية</td><td>كبير</td><td>2+2</td><td>45</td><td><span class="badge b-confirmed">فعّال</span></td><td><i class="ic subtle" data-i="edit" data-s="18"></i></td></tr>
+          <tr><td class="body-strong ltr">450-918 حلب</td><td>عادية</td><td>متوسط</td><td>2+2</td><td>37</td><td><span class="badge b-pending">صيانة</span></td><td><i class="ic subtle" data-i="edit" data-s="18"></i></td></tr>
+          <tr><td class="body-strong ltr">301-552 دمشق</td><td>رجال أعمال</td><td>كبير</td><td>1+1</td><td>22</td><td><span class="badge b-confirmed">فعّال</span></td><td><i class="ic subtle" data-i="edit" data-s="18"></i></td></tr>
+          <tr><td class="body-strong ltr">642-077 حمص</td><td>رجال أعمال</td><td>متوسط</td><td>1+1</td><td>18</td><td><span class="badge b-confirmed">فعّال</span></td><td><i class="ic subtle" data-i="edit" data-s="18"></i></td></tr>
+          <tr><td class="body-strong ltr">905-330 اللاذقية</td><td>درجة أولى</td><td>متوسط</td><td>2+1</td><td>27</td><td><span class="badge b-cancelled">معطّل</span></td><td><i class="ic subtle" data-i="edit" data-s="18"></i></td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="overlay">
+    <div class="modal" style="width:780px">
+      <div class="modal-head"><span class="h2 grow">باص جديد</span><span class="icon-btn"><i class="ic" data-i="x"></i></span></div>
+      <div class="modal-body" style="flex-direction:row;gap:24px">
+        <div class="col gap-16 grow">
+          <div class="field"><label>رقم اللوحة</label><div class="input focus"><span class="val">301-552 دمشق</span></div></div>
+          <div class="field"><label>الدرجة</label><div class="seg"><span>عادية</span><span>درجة أولى</span><span class="active">رجال أعمال</span></div></div>
+          <div class="field"><label>الحجم</label><div class="seg"><span class="active">كبير · 11 صف</span><span>متوسط · 9 صفوف</span></div></div>
+          <div class="field"><label>الحالة</label><div class="seg"><span class="active">فعّال</span><span>صيانة</span></div></div>
+          <div class="notice info"><i class="ic" data-i="info" data-s="18"></i><span>مخطط المقاعد بيطلع لحاله من الدرجة والحجم: رجال أعمال كبير = 1+1 × 11 صف = 22 مقعد.</span></div>
+        </div>
+        <div class="col gap-8 preview" style="align-items:center">
+          <span class="caption-strong muted">معاينة المخطط</span>
+          <div class="bus" data-class="business" data-size="large"></div>
+        </div>
+      </div>
+      <div class="modal-foot"><span class="btn btn-primary">حفظ الباص</span><span class="btn btn-ghost">إلغاء</span></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- W7. Trips + new trip drawer -->
+<div class="frame">
+<div class="frame-name">W07 · Trips + Create/Edit Trip</div>
+<div class="desktop">
+  <aside class="sidebar" data-role="admin" data-active="trips"></aside>
+  <div class="main">
+    <div class="topbar"><div class="title h2">الرحلات</div><span class="btn btn-primary btn-sm"><i class="ic" data-i="plus" data-s="16"></i>رحلة جديدة</span></div>
+    <div class="page">
+      <div class="toolbar">
+        <div class="field" style="width:160px"><label>من</label><div class="input"><span class="val">دمشق</span><i class="ic" data-i="chevron-down" data-s="18"></i></div></div>
+        <div class="field" style="width:160px"><label>إلى</label><div class="input"><span class="val">الكل</span><i class="ic" data-i="chevron-down" data-s="18"></i></div></div>
+        <div class="field" style="width:170px"><label>التاريخ</label><div class="input"><i class="ic" data-i="calendar" data-s="18"></i><span class="val">12/11/2026</span></div></div>
+      </div>
+      <div class="table-card" style="margin-left:440px">
+        <table class="table compact">
+          <tr><th>الخط</th><th>الموعد</th><th>الباص</th><th>السعر</th><th>المحجوز</th><th>المصدر</th><th>الحالة</th></tr>
+          <tr><td class="body-strong">دمشق ← حلب</td><td>07:30 ص</td><td>أولى · كبير</td><td>65,000</td><td>19/33</td><td>مجدولة</td><td><span class="badge b-info">مجدولة</span></td></tr>
+          <tr class="sel"><td class="body-strong">دمشق ← حلب</td><td>10:00 ص</td><td>أولى · كبير</td><td>65,000</td><td>28/33</td><td>مجدولة</td><td><span class="badge b-info">مجدولة</span></td></tr>
+          <tr><td class="body-strong">دمشق ← حلب</td><td>01:00 م</td><td>عادية · كبير</td><td>40,000</td><td>19/45</td><td>يدوية</td><td><span class="badge b-info">مجدولة</span></td></tr>
+          <tr><td class="body-strong">دمشق ← حمص</td><td>08:00 ص</td><td>أولى · كبير</td><td>50,000</td><td>30/33</td><td>مجدولة</td><td><span class="badge b-info">مجدولة</span></td></tr>
+          <tr><td class="body-strong">دمشق ← درعا</td><td>11:00 ص</td><td>أعمال · متوسط</td><td>55,000</td><td>11/18</td><td>يدوية</td><td><span class="badge b-info">مجدولة</span></td></tr>
+          <tr><td class="body-strong">دمشق ← حماة</td><td>02:00 م</td><td>عادية · متوسط</td><td>40,000</td><td>0/37</td><td>مجدولة</td><td><span class="badge b-cancelled">ملغاة</span></td></tr>
+          <tr><td class="body-strong">دمشق ← اللاذقية</td><td>09:00 ص</td><td>أولى · متوسط</td><td>70,000</td><td>22/27</td><td>مجدولة</td><td><span class="badge b-info">مجدولة</span></td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="drawer">
+    <div class="modal-head"><span class="h2 grow">تعديل رحلة</span><span class="icon-btn"><i class="ic" data-i="x"></i></span></div>
+    <div class="modal-body" style="flex:1">
+      <div class="grid-2">
+        <div class="field"><label>من</label><div class="input"><span class="val">دمشق</span><i class="ic" data-i="chevron-down" data-s="18"></i></div></div>
+        <div class="field"><label>إلى</label><div class="input"><span class="val">حلب</span><i class="ic" data-i="chevron-down" data-s="18"></i></div></div>
+        <div class="field"><label>التاريخ</label><div class="input"><i class="ic" data-i="calendar" data-s="18"></i><span class="val">12/11/2026</span></div></div>
+        <div class="field"><label>الساعة</label><div class="input"><i class="ic" data-i="clock" data-s="18"></i><span class="val">10:00 ص</span></div></div>
+      </div>
+      <div class="field"><label>الباص</label><div class="input"><i class="ic" data-i="bus" data-s="18"></i><span class="val"><span class="ltr">123-456 دمشق</span> · درجة أولى · كبير (33)</span><i class="ic" data-i="chevron-down" data-s="18"></i></div><span class="helper">ما فيك تغيّر الباص لأن بالرحلة 28 حجز.</span></div>
+      <div class="field"><label>سعر المقعد (ل.س)</label><div class="input focus"><i class="ic" data-i="money" data-s="18"></i><span class="val">65,000</span></div><span class="helper">تعديل السعر ما بيأثر على الحجوزات القديمة.</span></div>
+      <div class="notice info"><i class="ic" data-i="repeat" data-s="18"></i><span>هالرحلة متولّدة من جدول "دمشق ← حلب يومياً 10:00". تعديلها ما بيغيّر الجدول.</span></div>
+    </div>
+    <div class="modal-foot" style="flex-direction:column">
+      <span class="btn btn-primary btn-block">حفظ التعديلات</span>
+      <span class="btn btn-danger-outline btn-block"><i class="ic" data-i="ban" data-s="18"></i>إلغاء الرحلة</span>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- W8. Schedules -->
+<div class="frame">
+<div class="frame-name">W08 · Recurring Schedules</div>
+<div class="desktop">
+  <aside class="sidebar" data-role="admin" data-active="schedules"></aside>
+  <div class="main">
+    <div class="topbar"><div class="title col" style="gap:0"><span class="h2">الرحلات المجدولة</span><span class="caption muted">النظام بيولّد رحلات 30 يوم لقدام من الجداول الفعّالة</span></div><span class="btn btn-primary btn-sm"><i class="ic" data-i="plus" data-s="16"></i>جدول جديد</span></div>
+    <div class="page">
+      <div class="table-card" style="margin-left:440px">
+        <table class="table compact">
+          <tr><th>الخط</th><th>الساعة</th><th>التكرار</th><th>الباص</th><th>الفترة</th><th>فعّال</th></tr>
+          <tr><td class="body-strong">دمشق ← حلب</td><td>10:00 ص</td><td>يومي</td><td class="ltr">123-456</td><td>1/11 – 31/12</td><td><span class="toggle on"></span></td></tr>
+          <tr><td class="body-strong">دمشق ← حلب</td><td>07:30 ص</td><td>يومي</td><td class="ltr">905-330</td><td>1/11 – 31/12</td><td><span class="toggle on"></span></td></tr>
+          <tr class="sel"><td class="body-strong">دمشق ← اللاذقية</td><td>09:00 ص</td><td>أسبوعي · خميس، جمعة</td><td class="ltr">905-330</td><td>1/11 – 28/2</td><td><span class="toggle on"></span></td></tr>
+          <tr><td class="body-strong">دمشق ← حمص</td><td>08:00 ص</td><td>يومي</td><td class="ltr">778-210</td><td>1/10 – 31/12</td><td><span class="toggle on"></span></td></tr>
+          <tr><td class="body-strong">حلب ← دير الزور</td><td>06:00 ص</td><td>شهري · يوم 1</td><td class="ltr">450-918</td><td>1/1 – 31/12</td><td><span class="toggle"></span></td></tr>
+          <tr><td class="body-strong">دمشق ← حماة</td><td>02:00 م</td><td>أسبوعي · سبت، ثلاثاء</td><td class="ltr">778-210</td><td>1/11 – 31/1</td><td><span class="toggle on"></span></td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="drawer">
+    <div class="modal-head"><span class="h2 grow">جدول جديد</span><span class="icon-btn"><i class="ic" data-i="x"></i></span></div>
+    <div class="modal-body" style="flex:1;gap:14px">
+      <div class="grid-2">
+        <div class="field"><label>من</label><div class="input"><span class="val">دمشق</span><i class="ic" data-i="chevron-down" data-s="18"></i></div></div>
+        <div class="field"><label>إلى</label><div class="input"><span class="val">اللاذقية</span><i class="ic" data-i="chevron-down" data-s="18"></i></div></div>
+        <div class="field"><label>الساعة</label><div class="input"><i class="ic" data-i="clock" data-s="18"></i><span class="val">09:00 ص</span></div></div>
+        <div class="field"><label>سعر المقعد</label><div class="input"><span class="val">70,000</span></div></div>
+      </div>
+      <div class="field"><label>الباص</label><div class="input"><i class="ic" data-i="bus" data-s="18"></i><span class="val"><span class="ltr">905-330</span> · درجة أولى · متوسط (27)</span><i class="ic" data-i="chevron-down" data-s="18"></i></div></div>
+      <div class="field"><label>التكرار</label><div class="seg"><span>يومي</span><span class="active">أسبوعي</span><span>شهري</span></div></div>
+      <div class="field"><label>الأيام</label><div class="row wrap"><span class="chip">سبت</span><span class="chip">أحد</span><span class="chip">إثنين</span><span class="chip">ثلاثاء</span><span class="chip">أربعاء</span><span class="chip active">خميس</span><span class="chip active">جمعة</span></div></div>
+      <div class="grid-2">
+        <div class="field"><label>من تاريخ</label><div class="input"><i class="ic" data-i="calendar" data-s="18"></i><span class="val">01/11/2026</span></div></div>
+        <div class="field"><label>إلى تاريخ</label><div class="input"><i class="ic" data-i="calendar" data-s="18"></i><span class="val">28/02/2027</span></div></div>
+      </div>
+      <div class="notice info"><i class="ic" data-i="info" data-s="18"></i><span>رح تنولّد 9 رحلات بالـ 30 يوم الجاية، وكل يوم بتنضاف رحلات اليوم الجديد.</span></div>
+    </div>
+    <div class="modal-foot"><span class="btn btn-primary btn-block">حفظ الجدول</span></div>
+  </div>
+</div>
+</div>
+
+<!-- W9. Receptionists -->
+<div class="frame">
+<div class="frame-name">W09 · Receptionists</div>
+<div class="desktop">
+  <aside class="sidebar" data-role="admin" data-active="staff"></aside>
+  <div class="main">
+    <div class="topbar"><div class="title h2">موظفو الاستقبال</div><span class="btn btn-primary btn-sm"><i class="ic" data-i="plus" data-s="16"></i>موظف جديد</span></div>
+    <div class="page">
+      <div class="table-card">
+        <table class="table">
+          <tr><th>الموظف</th><th>رقم الهاتف</th><th>حجوزات هالشهر</th><th>آخر دخول</th><th>الحالة</th><th>إجراءات</th></tr>
+          <tr><td><div class="row"><span class="avatar">ر</span><span class="body-strong">رامي سليمان</span></div></td><td class="ltr">0944 555 120</td><td>412</td><td>اليوم، 07:02 ص</td><td><span class="badge b-confirmed">فعّال</span></td><td><div class="row"><span class="btn btn-ghost btn-sm"><i class="ic" data-i="key" data-s="16"></i>إعادة تعيين كلمة المرور</span><span class="btn btn-ghost btn-sm"><i class="ic" data-i="ban" data-s="16"></i>تعطيل</span></div></td></tr>
+          <tr><td><div class="row"><span class="avatar">ه</span><span class="body-strong">هالة مرعي</span></div></td><td class="ltr">0955 100 642</td><td>365</td><td>اليوم، 08:15 ص</td><td><span class="badge b-confirmed">فعّال</span></td><td><div class="row"><span class="btn btn-ghost btn-sm"><i class="ic" data-i="key" data-s="16"></i>إعادة تعيين كلمة المرور</span><span class="btn btn-ghost btn-sm"><i class="ic" data-i="ban" data-s="16"></i>تعطيل</span></div></td></tr>
+          <tr><td><div class="row"><span class="avatar">ب</span><span class="body-strong">بشار عثمان</span></div></td><td class="ltr">0988 230 904</td><td>298</td><td>أمس، 06:40 م</td><td><span class="badge b-confirmed">فعّال</span></td><td><div class="row"><span class="btn btn-ghost btn-sm"><i class="ic" data-i="key" data-s="16"></i>إعادة تعيين كلمة المرور</span><span class="btn btn-ghost btn-sm"><i class="ic" data-i="ban" data-s="16"></i>تعطيل</span></div></td></tr>
+          <tr><td><div class="row"><span class="avatar" style="background:var(--n100);color:var(--n500)">ع</span><span class="body-strong muted">علا ديب</span></div></td><td class="ltr">0933 871 015</td><td>0</td><td>3 تشرين الأول</td><td><span class="badge b-cancelled">معطّل</span></td><td><div class="row"><span class="btn btn-secondary btn-sm"><i class="ic" data-i="check" data-s="16"></i>تفعيل</span></div></td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="overlay">
+    <div class="modal" style="width:520px">
+      <div class="modal-head"><span class="h2 grow">موظف استقبال جديد</span><span class="icon-btn"><i class="ic" data-i="x"></i></span></div>
+      <div class="modal-body">
+        <div class="field"><label>الاسم الكامل</label><div class="input focus"><span class="val">مازن الخوري</span></div></div>
+        <div class="field"><label>رقم الهاتف</label><div class="input"><i class="ic" data-i="phone" data-s="18"></i><span class="val ltr" style="text-align:right">0966 412 300</span></div></div>
+        <div class="field"><label>كلمة مرور مؤقتة</label><div class="input"><i class="ic" data-i="lock" data-s="18"></i><span class="val">••••••••</span></div><span class="helper">الموظف بيقدر يغيّرها بعد أول دخول.</span></div>
+        <div class="notice info"><i class="ic" data-i="info" data-s="18"></i><span>الدور: موظف استقبال. بيقدر يحجز ويأكّد الدفع ويلغي، بس ما بيعدّل رحلات ولا أسعار.</span></div>
+      </div>
+      <div class="modal-foot"><span class="btn btn-primary">إضافة الموظف</span><span class="btn btn-ghost">إلغاء</span></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- W10. Reports -->
+<div class="frame">
+<div class="frame-name">W10 · Reports</div>
+<div class="desktop">
+  <aside class="sidebar" data-role="admin" data-active="reports"></aside>
+  <div class="main">
+    <div class="topbar"><div class="title h2">التقارير</div>
+      <div class="seg"><span>هالأسبوع</span><span class="active">هالشهر</span><span>مخصص</span></div>
+      <div class="input" style="width:200px"><i class="ic" data-i="calendar" data-s="18"></i><span class="val">1/11 – 30/11/2026</span></div>
+    </div>
+    <div class="page">
+      <div class="row gap-16">
+        <div class="stat"><span class="ico" style="background:var(--primary-600);color:var(--white)"><i class="ic" data-i="money" data-s="24"></i></span><div class="col" style="gap:0"><span class="caption muted">الإيرادات</span><span class="num">58,940,000 <span class="caption">ل.س</span></span></div></div>
+        <div class="stat"><span class="ico" style="background:var(--success-100);color:var(--success-500)"><i class="ic" data-i="ticket" data-s="24"></i></span><div class="col" style="gap:0"><span class="caption muted">الحجوزات</span><span class="num">1,086</span></div></div>
+        <div class="stat"><span class="ico" style="background:var(--accent-100);color:var(--warning-500)"><i class="ic" data-i="seat" data-s="24"></i></span><div class="col" style="gap:0"><span class="caption muted">متوسط الإشغال</span><span class="num">74%</span></div></div>
+        <div class="stat"><span class="ico" style="background:var(--danger-100);color:var(--danger-500)"><i class="ic" data-i="x" data-s="24"></i></span><div class="col" style="gap:0"><span class="caption muted">الحجوزات الملغاة</span><span class="num">47</span></div></div>
+      </div>
+      <div class="row gap-16" style="align-items:stretch;flex:1;min-height:0">
+        <div class="card col gap-12" style="flex:1.4">
+          <div class="row between"><span class="h3">الإيرادات حسب الخط</span><span class="caption muted">مليون ل.س</span></div>
+          <div class="bar-chart" style="height:300px">
+            <div class="b"><span class="caption-strong" style="color:var(--n700)">17.2</span><i style="height:92%"></i>دمشق–حلب</div>
+            <div class="b"><span class="caption-strong" style="color:var(--n700)">11.8</span><i style="height:63%"></i>دمشق–حمص</div>
+            <div class="b"><span class="caption-strong" style="color:var(--n700)">9.4</span><i style="height:50%"></i>دمشق–اللاذقية</div>
+            <div class="b"><span class="caption-strong" style="color:var(--n700)">7.1</span><i style="height:38%"></i>دمشق–طرطوس</div>
+            <div class="b"><span class="caption-strong" style="color:var(--n700)">5.6</span><i style="height:30%"></i>دمشق–حماة</div>
+            <div class="b"><span class="caption-strong" style="color:var(--n700)">4.3</span><i style="height:23%"></i>دمشق–درعا</div>
+            <div class="b"><span class="caption-strong" style="color:var(--n700)">3.5</span><i style="height:19%"></i>حلب–الحسكة</div>
+          </div>
+          <div class="divider"></div>
+          <span class="h3">الإشغال حسب الدرجة</span>
+          <div class="row gap-12"><span style="width:90px">عادية</span><div class="progress grow"><i style="width:81%"></i></div><span class="body-strong">81%</span></div>
+          <div class="row gap-12"><span style="width:90px">درجة أولى</span><div class="progress grow"><i style="width:72%"></i></div><span class="body-strong">72%</span></div>
+          <div class="row gap-12"><span style="width:90px">رجال أعمال</span><div class="progress grow"><i style="width:58%;background:var(--accent-500)"></i></div><span class="body-strong">58%</span></div>
+        </div>
+        <div class="table-card" style="flex:1">
+          <div class="table-head"><span class="h3 grow">الحجوزات حسب الموظف</span></div>
+          <table class="table">
+            <tr><th>القناة / الموظف</th><th>الحجوزات</th><th>المبلغ (ل.س)</th></tr>
+            <tr><td class="body-strong">التطبيق</td><td>396</td><td>21,780,000</td></tr>
+            <tr><td>رامي سليمان</td><td>412</td><td>22,160,000</td></tr>
+            <tr><td>هالة مرعي</td><td>365</td><td>19,240,000</td></tr>
+            <tr><td>بشار عثمان</td><td>298</td><td>15,980,000</td></tr>
+          </table>
+          <div class="table-head" style="border-top:1px solid var(--n200)"><span class="h3 grow">طرق الدفع</span></div>
+          <div class="col gap-12" style="padding:16px 20px">
+            <div class="row gap-12"><span style="width:90px">نقداً</span><div class="progress grow"><i style="width:68%"></i></div><span class="body-strong">68%</span></div>
+            <div class="row gap-12"><span style="width:90px">شام كاش</span><div class="progress grow"><i style="width:32%;background:var(--accent-500)"></i></div><span class="body-strong">32%</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+</div>
+<script>
+// Sidebar per role: the receptionist sees only the booking pages, the admin sees everything
+const NAV = [
+  ['dashboard', 'لوحة التحكم', 'dashboard', ['admin']],
+  ['booking', 'الحجز السريع', 'seat', ['admin', 'receptionist']],
+  ['bookings', 'الحجوزات', 'ticket', ['admin', 'receptionist']],
+  ['manifest', 'قوائم الركاب', 'list', ['admin', 'receptionist']],
+  ['-', 'الإدارة', '', ['admin']],
+  ['buses', 'الباصات', 'bus', ['admin']],
+  ['trips', 'الرحلات', 'route', ['admin']],
+  ['schedules', 'الرحلات المجدولة', 'repeat', ['admin']],
+  ['staff', 'موظفو الاستقبال', 'users', ['admin']],
+  ['reports', 'التقارير', 'chart', ['admin']]
+];
+document.querySelectorAll('.sidebar[data-role]').forEach(el => {
+  const role = el.dataset.role;
+  let html = '<div class="brand"><span class="logo"><i class="ic" data-i="bus" data-s="22"></i></span>رحلتي</div>';
+  for (const [key, label, icon, roles] of NAV) {
+    if (!roles.includes(role)) continue;
+    html += key === '-' ? `<div class="nav-label">${label}</div>`
+      : `<div class="nav${key === el.dataset.active ? ' active' : ''}"><i class="ic" data-i="${icon}"></i>${label}</div>`;
+  }
+  const user = role === 'admin' ? ['م', 'مدير النظام', 'Admin'] : ['ر', 'رامي سليمان', 'موظف استقبال'];
+  html += `<div class="side-user"><span class="avatar">${user[0]}</span><div class="col grow" style="gap:0"><span class="body-strong">${user[1]}</span><span class="caption" style="color:var(--primary-100)">${user[2]}</span></div><i class="ic" data-i="logout" data-s="18"></i></div>`;
+  el.innerHTML = html;
+});
+</script>
+<script>
+// Icons (lucide style) — same set as the Figma "Icon/*" components
+const ICONS = {
+  bus: '<path d="M8 6v6"/><path d="M15 6v6"/><path d="M2 12h19.6"/><path d="M18 18h3s.5-1.7.8-2.8c.1-.4.2-.8.2-1.2 0-.4-.1-.8-.2-1.2l-1.4-5C20.1 6.8 19.1 6 18 6H4a2 2 0 0 0-2 2v10h3"/><circle cx="7" cy="18" r="2"/><path d="M9 18h5"/><circle cx="16" cy="18" r="2"/>',
+  search: '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
+  calendar: '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
+  user: '<circle cx="12" cy="8" r="4"/><path d="M4 21v-1a7 7 0 0 1 16 0v1"/>',
+  home: '<path d="M3 10.5 12 3l9 7.5V21H3z"/><path d="M9 21v-7h6v7"/>',
+  ticket: '<path d="M2 9a3 3 0 0 1 0 6v3a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-3a3 3 0 0 1 0-6V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M13 5v2M13 17v2M13 11v2"/>',
+  pin: '<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>',
+  clock: '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
+  'arrow-right': '<path d="M5 12h14M12 5l7 7-7 7"/>',
+  'arrow-left': '<path d="M19 12H5M12 19l-7-7 7-7"/>',
+  'chevron-left': '<path d="m15 18-6-6 6-6"/>',
+  'chevron-down': '<path d="m6 9 6 6 6-6"/>',
+  swap: '<path d="m16 3 4 4-4 4"/><path d="M20 7H4"/><path d="m8 21-4-4 4-4"/><path d="M4 17h16"/>',
+  'swap-v': '<path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="m21 8-4-4-4 4"/><path d="M17 4v16"/>',
+  dashboard: '<rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/>',
+  route: '<circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/>',
+  repeat: '<path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/>',
+  users: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>',
+  chart: '<path d="M3 3v18h18"/><path d="M18 17V9M13 17V5M8 17v-3"/>',
+  list: '<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>',
+  logout: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5M21 12H9"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  edit: '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
+  check: '<path d="M20 6 9 17l-5-5"/>',
+  x: '<path d="M18 6 6 18M6 6l12 12"/>',
+  wallet: '<path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/>',
+  cash: '<rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/>',
+  phone: '<rect x="6" y="2" width="12" height="20" rx="2"/><path d="M11 18h2"/>',
+  lock: '<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+  filter: '<path d="M22 3H2l8 9.46V19l4 2v-8.54z"/>',
+  steering: '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="2"/><path d="M12 14v8M10 12H2M14 12h8"/>',
+  trash: '<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>',
+  eye: '<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>',
+  more: '<circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/>',
+  info: '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>',
+  seat: '<path d="M19 9V6a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v3"/><path d="M3 16a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-5a2 2 0 0 0-4 0v1.5a.5.5 0 0 1-.5.5h-9a.5.5 0 0 1-.5-.5V11a2 2 0 0 0-4 0z"/><path d="M5 18v2M19 18v2"/>',
+  copy: '<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
+  key: '<circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6M15.5 7.5l3 3L22 7l-3-3"/>',
+  ban: '<circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/>',
+  wrench: '<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>',
+  money: '<path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>',
+  bell: '<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>'
+};
+
+// Replace <i class="ic" data-i="name" data-s="20"> with an inline SVG whose stroke is the computed text color
+function renderIcons() {
+  document.querySelectorAll('i[data-i]').forEach(el => {
+    const size = el.dataset.s || 20;
+    const color = getComputedStyle(el).color;
+    el.style.width = el.style.height = size + 'px';
+    el.innerHTML = `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">${ICONS[el.dataset.i] || ''}</svg>`;
+  });
+}
+
+// Seat map generated from class + size (same rule as the analysis: buildSeatMap(class, size))
+// <div class="bus" data-class="regular|first|business" data-size="large|medium" data-booked="1,2" data-selected="14"></div>
+const LAYOUTS = { regular: [2, 2, true], first: [2, 1, false], business: [1, 1, false] };
+function renderSeatMaps() {
+  document.querySelectorAll('.bus[data-class]').forEach(el => {
+    const [left, right, backMiddle] = LAYOUTS[el.dataset.class];
+    const rows = el.dataset.size === 'medium' ? 9 : 11;
+    const list = k => new Set((el.dataset[k] || '').split(',').filter(Boolean).map(Number));
+    const booked = list('booked'), selected = list('selected');
+    const seat = n => `<span class="seat ${selected.has(n) ? 'selected' : booked.has(n) ? 'booked' : ''}">${n}</span>`;
+    let html = `<div class="bus-front"><span class="seat driver"><i class="ic" data-i="steering" data-s="18"></i></span><span class="door">الباب</span></div>`;
+    let n = 1;
+    for (let r = 1; r <= rows; r++) {
+      const last = r === rows;
+      let row = '<div class="bus-row">';
+      for (let i = 0; i < left; i++) row += seat(n++);
+      row += last && backMiddle ? seat(n++) : '<span class="aisle"></span>';
+      for (let i = 0; i < right; i++) row += seat(n++);
+      el.insertAdjacentHTML('beforeend', row + '</div>');
+    }
+    el.insertAdjacentHTML('afterbegin', html);
+    el.dataset.capacity = n - 1;
+  });
+}
+
+// #only=3 shows just the third frame (handy for screenshots and for importing one screen at a time)
+function filterFrames() {
+  if (location.hash.includes('shot')) document.body.classList.add('shot');
+  const m = location.hash.match(/only=(\d+)/);
+  if (!m) return;
+  document.querySelectorAll('.frame').forEach((f, i) => { if (i + 1 !== Number(m[1])) f.remove(); });
+}
+
+document.addEventListener('DOMContentLoaded', () => { filterFrames(); renderSeatMaps(); renderIcons(); });
+
+</script>
+</body>
+</html>
