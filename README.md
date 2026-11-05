@@ -2,11 +2,7 @@
 
 Full-stack booking system for an intercity bus company in Syria: trips and recurring schedules, seat-map booking, cash and Sham Cash payments, and three roles.
 
-> **Status: work in progress.** The analysis and the UI design are done; the code (backend, web, mobile) is being built.
-
-| Customer app | Reception: quick booking |
-| :---: | :---: |
-| <img src="design/screens/mobile-05-seat-map.png" width="260" alt="Seat map in the customer app"> | <img src="design/screens/web-02-quick-booking.png" width="560" alt="Quick booking screen for receptionists"> |
+> **Status: work in progress.** The backend, web and mobile projects are set up; the features are being built.
 
 ---
 
@@ -53,9 +49,9 @@ This system gives:
 
 | Part | Technology |
 | :--- | :--- |
-| Backend | Node.js, Express, MongoDB, Mongoose, JWT, bcrypt, node-cron |
-| Web (Admin + Reception) | Next.js |
-| Mobile (Customer) | React Native (Expo) |
+| Backend | Node.js, Express, TypeScript, MongoDB, Mongoose, JWT, bcrypt, node-cron, zod |
+| Web (Admin + Reception) | Next.js, TypeScript, Tailwind CSS |
+| Mobile (Customer) | React Native (Expo), TypeScript |
 
 ## Data Model
 
@@ -65,29 +61,38 @@ Five collections: `users`, `buses`, `trips`, `tripschedules`, `bookings`. Passen
 
 ```
 bus-booking-system/
-├── backend/     # Express + MongoDB API (planned)
-├── web/         # Next.js: Admin + Receptionist (planned)
-├── mobile/      # React Native (Expo): Customer (planned)
-├── design/      # UI screens: HTML source, PNG exports, PDF
-└── docs/        # Analysis (Arabic)
+├── backend/     # Express + MongoDB API
+├── web/         # Next.js: Admin + Receptionist
+└── mobile/      # React Native (Expo): Customer
 ```
 
-## Design
+## Getting Started
 
-All 21 screens (11 mobile, 10 web) are in [`design/`](design):
+Needs Node.js 20+ and MongoDB (local, or a MongoDB Atlas connection string).
 
-- [`design/screens/`](design/screens): one PNG per screen.
-- [`design/bus-booking-screens.pdf`](design/bus-booking-screens.pdf): every screen in one file.
-- `design/mobile.html` and `design/web.html`: the editable source. After editing, run `node build-share.mjs` inside `design/` to rebuild the single-file copies in `design/share/`.
+```bash
+# Backend: http://localhost:4000/api/health
+cd backend
+npm install
+cp .env.example .env
+npm run dev
 
-## Documentation
+# Web: http://localhost:3000
+cd web
+npm install
+npm run dev
 
-- [Analysis](docs/analysis.pdf) (Arabic): requirements, roles, design decisions, data model, API draft, screens.
+# Mobile: scan the QR code with Expo Go
+cd mobile
+npm install
+npm start
+```
 
 ## Roadmap
 
 - [x] Analysis
 - [x] UI design
+- [x] Project setup (TypeScript in all three parts)
 - [ ] Backend: auth and roles, buses, trips, schedules, bookings
 - [ ] Web dashboard (Admin + Receptionist)
 - [ ] Mobile app (Customer)

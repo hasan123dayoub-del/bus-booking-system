@@ -150,3 +150,7 @@ vite.config.ts.timestamp-*
 
 # Keep the example env files (they list the variables, no secrets)
 !.env.example
+
+# Local only: UI design files and the analysis
+design/
+docs/
