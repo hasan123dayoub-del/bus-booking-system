@@ -1,36 +1,33 @@
 {
-  "name": "bus-booking-backend",
-  "version": "1.0.0",
-  "description": "Express + MongoDB API for the bus booking system",
+  "name": "rihlati-backend",
+  "version": "0.1.0",
+  "private": true,
   "main": "dist/server.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
+    "build": "tsc",
     "start": "node dist/server.js",
-    "build": "tsc"
+    "typecheck": "tsc --noEmit",
+    "seed:admin": "tsx src/scripts/seed-admin.ts"
   },
-  "keywords": [],
-  "author": "Hasan Samer Dayoub",
-  "license": "MIT",
-  "type": "module",
   "dependencies": {
-    "bcryptjs": "^3.0.3",
-    "cors": "^2.8.6",
-    "dotenv": "^18.0.9",
-    "express": "^5.3.0",
-    "helmet": "^8.3.0",
-    "jsonwebtoken": "^9.0.3",
-    "mongoose": "^9.12.0",
-    "morgan": "^1.12.1",
-    "node-cron": "^4.6.0",
-    "zod": "^4.6.7"
+    "bcryptjs": "^3.0.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^5.1.0",
+    "helmet": "^8.0.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.9.0",
+    "node-cron": "^3.0.3",
+    "zod": "^3.24.0"
   },
   "devDependencies": {
-    "@types/cors": "^2.8.19",
-    "@types/express": "^5.0.6",
-    "@types/jsonwebtoken": "^9.0.10",
-    "@types/morgan": "^1.9.10",
-    "@types/node": "^26.6.6",
-    "tsx": "^4.23.15",
-    "typescript": "^7.0.2"
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/jsonwebtoken": "^9.0.7",
+    "@types/node": "^22.10.0",
+    "@types/node-cron": "^3.0.11",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
   }
 }

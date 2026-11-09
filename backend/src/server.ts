@@ -1,17 +1,23 @@
-import "dotenv/config";
-import express from "express";
-import mongoose from "mongoose";
+import { app } from "./app";
+import { connectDB, disconnectDB } from "./config/db";
+import { env } from "./config/env";
 
-const app = express();
-app.use(express.json());
+async function main() {
+  await connectDB();
+  const server = app.listen(env.PORT, () => {
+    console.log(`API running on http://localhost:${env.PORT}/api`);
+  });
 
-app.get("/api/health", (_req, res) => {
-  res.json({ status: "ok", db: mongoose.connection.readyState === 1 ? "connected" : "disconnected" });
+  const shutdown = async () => {
+    server.close();
+    await disconnectDB();
+    process.exit(0);
+  };
+  process.on("SIGINT", shutdown);
+  process.on("SIGTERM", shutdown);
+}
+
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
 });
-
-const PORT = Number(process.env.PORT) || 4000;
-const MONGO_URI = process.env.MONGO_URI;
-if (!MONGO_URI) throw new Error("MONGO_URI is not set (copy .env.example to .env)");
-
-await mongoose.connect(MONGO_URI);
-app.listen(PORT, () => console.log(`API on http://localhost:${PORT}`));
