@@ -1,6 +1,6 @@
 import bcrypt from "bcryptjs";
 import { User } from "../models";
-import { AppError } from "../utils/appError";
+import { AppError } from "../utils/AppError";
 import { signToken } from "../utils/jwt";
 
 export async function registerCustomer(input: { name: string; phone: string; password: string }) {

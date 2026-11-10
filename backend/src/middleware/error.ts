@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import { ZodError } from "zod";
 import { env } from "../config/env";
-import { AppError } from "../utils/appError";
+import { AppError } from "../utils/AppError";
 
 export function notFound(_req: Request, res: Response) {
   res.status(404).json({ code: "NOT_FOUND", message: "المسار غير موجود" });
