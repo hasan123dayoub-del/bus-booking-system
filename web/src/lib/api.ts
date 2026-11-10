@@ -1,99 +1,75 @@
-const API_BASE_URL = (
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api"
-).replace(/\/+$/, "");
+import type { PageMeta } from "./types";
 
+const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api").replace(/\/+$/, "");
+
+/** Error returned by the API: { code, message }. */
 export class ApiError extends Error {
-  status: number;
-  code?: string;
-
-  constructor(message: string, status: number, code?: string) {
+  constructor(
+    message: string,
+    public status: number,
+    public code?: string,
+  ) {
     super(message);
     this.name = "ApiError";
-    this.status = status;
-    this.code = code;
   }
 }
 
-let authToken: string | null = null;
+let token: string | null = null;
+let onUnauthorized: (() => void) | null = null;
 
-export function setAuthToken(token: string | null) {
-  authToken = token;
+export function setToken(value: string | null) {
+  token = value;
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
+/** Called when the API answers 401 (expired session). */
+export function setUnauthorizedHandler(handler: (() => void) | null) {
+  onUnauthorized = handler;
 }
 
-export async function apiRequest<T>(
-  path: string,
-  init: RequestInit = {},
-): Promise<T> {
-  const headers = new Headers(init.headers);
-  if (init.body && !headers.has("Content-Type")) {
-    headers.set("Content-Type", "application/json");
-  }
-  if (authToken) headers.set("Authorization", `Bearer ${authToken}`);
+async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
+  const headers: Record<string, string> = {};
+  if (body !== undefined) headers["Content-Type"] = "application/json";
+  if (token) headers.Authorization = `Bearer ${token}`;
 
-  let response: Response;
+  let res: Response;
   try {
-    response = await fetch(`${API_BASE_URL}${path}`, {
-      ...init,
+    res = await fetch(`${API_URL}${path}`, {
+      method,
       headers,
+      body: body === undefined ? undefined : JSON.stringify(body),
       cache: "no-store",
     });
   } catch {
-    throw new ApiError(
-      `تعذر الاتصال بالخادم. تحقق من تشغيل الواجهة الخلفية على ${API_BASE_URL}`,
-      0,
-    );
+    throw new ApiError("تعذّر الاتصال بالخادم، تحقق من الاتصال وحاول مجدداً", 0, "NETWORK");
   }
 
-  const raw = await response.text();
-  let payload: unknown;
-  if (raw) {
-    try {
-      payload = JSON.parse(raw);
-    } catch {
-      throw new ApiError("استجابة الخادم ليست بصيغة JSON صالحة", response.status);
-    }
+  const text = await res.text();
+  const payload = text ? JSON.parse(text) : null;
+  if (!res.ok) {
+    if (res.status === 401 && token) onUnauthorized?.();
+    throw new ApiError(payload?.message ?? `تعذّر تنفيذ الطلب (${res.status})`, res.status, payload?.code);
   }
-
-  if (!response.ok) {
-    const message =
-      isRecord(payload) && typeof payload.message === "string"
-        ? payload.message
-        : `تعذر تنفيذ الطلب (${response.status})`;
-    const code =
-      isRecord(payload) && typeof payload.code === "string"
-        ? payload.code
-        : undefined;
-    throw new ApiError(message, response.status, code);
-  }
-
-  if (payload === undefined) {
-    return undefined as T;
-  }
-
-  if (isRecord(payload) && "data" in payload) {
-    return payload.data as T;
-  }
-
   return payload as T;
 }
 
-export async function apiList<T>(path: string): Promise<T[]> {
-  const response = await apiRequest<unknown>(path);
-  if (!Array.isArray(response)) {
-    throw new Error("استجابة الخادم يجب أن تكون قائمة");
+/** Every successful response is { data } (lists with paging add { meta }). */
+export const api = {
+  get: async <T>(path: string) => (await request<{ data: T }>("GET", path)).data,
+  page: <T>(path: string) => request<{ data: T[]; meta: PageMeta }>("GET", path),
+  post: async <T>(path: string, body: unknown = {}) => (await request<{ data: T }>("POST", path, body)).data,
+  patch: async <T>(path: string, body: unknown = {}) => (await request<{ data: T }>("PATCH", path, body)).data,
+  delete: (path: string) => request<null>("DELETE", path),
+};
+
+export const errorMessage = (error: unknown) =>
+  error instanceof Error ? error.message : "حدث خطأ غير متوقع";
+
+/** Builds a query string, skipping empty values. */
+export function qs(params: Record<string, string | number | boolean | undefined | null>) {
+  const s = new URLSearchParams();
+  for (const [k, v] of Object.entries(params)) {
+    if (v !== undefined && v !== null && v !== "") s.set(k, String(v));
   }
-  return response as T[];
-}
-
-export function jsonBody(value: unknown) {
-  return JSON.stringify(value);
-}
-
-export function entityId(value: string | { _id: string } | { id: string }) {
-  if (typeof value === "string") return value;
-  return "_id" in value ? value._id : value.id;
+  const out = s.toString();
+  return out ? `?${out}` : "";
 }

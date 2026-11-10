@@ -1,102 +1,105 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, type FormEvent } from "react";
-import { ErrorBanner } from "@/components/ui/feedback";
-import { BrandMark } from "@/components/layout/brand-mark";
-import { useAuth } from "@/lib/auth-context";
+import { useEffect, useState, type FormEvent } from "react";
+import { BrandMark } from "@/components/app-shell";
+import { Icon } from "@/components/icon";
+import { Alert, Field } from "@/components/ui";
+import { errorMessage } from "@/lib/api";
+import { homeFor, useAuth } from "@/lib/auth";
 
 export default function LoginPage() {
-  const { login, error: sessionError, logout } = useAuth();
+  const { session, loading, login, logout } = useAuth();
   const router = useRouter();
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
+  const [remember, setRemember] = useState(true);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
-  async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  // Already signed in: go straight to the dashboard
+  useEffect(() => {
+    if (!loading && session && session.user.role !== "CUSTOMER") router.replace(homeFor(session.user.role));
+  }, [loading, session, router]);
+
+  async function submit(e: FormEvent) {
+    e.preventDefault();
     setError("");
     setBusy(true);
     try {
-      const session = await login(phone.trim(), password);
-      if (session.user.role === "ADMIN") router.replace("/admin");
-      else if (session.user.role === "RECEPTIONIST") {
-        router.replace("/reception/booking");
-      } else {
+      const s = await login(phone.trim(), password, remember);
+      if (s.user.role === "CUSTOMER") {
         logout();
-        setError("حسابات الزبائن تستخدم تطبيق الهاتف ولا يمكنها الدخول إلى هذه المنصة.");
+        setError("حسابات الزبائن تستخدم تطبيق الهاتف، هذه اللوحة للإدارة والاستقبال فقط.");
+        return;
       }
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "تعذر تسجيل الدخول");
+      router.replace(homeFor(s.user.role));
+    } catch (err) {
+      setError(errorMessage(err));
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <main className="login-page" dir="rtl">
-      <section className="login-form-side">
-        <div className="login-form-wrap">
-          <Link className="brand-lockup" href="/login">
-            <BrandMark />
-            <span>
-              <strong>رحلتي</strong>
-              <small>نظام إدارة الرحلات والحجوزات</small>
-            </span>
-          </Link>
-          <h1>مرحباً بعودتك</h1>
-          <p>سجّل الدخول إلى حسابك لمتابعة إدارة الرحلات والحجوزات.</p>
-          {(error || sessionError) && (
-            <ErrorBanner message={error || sessionError || ""} />
-          )}
-          <form className="login-form" onSubmit={submit}>
-            <label className="field">
-              <span>رقم الهاتف</span>
-              <input
-                autoComplete="username"
-                inputMode="tel"
-                placeholder="أدخل رقم الهاتف"
-                required
-                value={phone}
-                onChange={(event) => setPhone(event.target.value)}
-              />
-            </label>
-            <label className="field">
-              <span>كلمة المرور</span>
-              <input
-                autoComplete="current-password"
-                placeholder="أدخل كلمة المرور"
-                required
-                type="password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-              />
-            </label>
-            <button className="button button-primary" disabled={busy} type="submit">
-              {busy ? "جارٍ تسجيل الدخول…" : "تسجيل الدخول"}
-            </button>
-          </form>
-          <p className="muted-note" style={{ marginTop: 18 }}>
-            الدخول مخصص لحسابات الإدارة وموظفي الاستقبال.
-          </p>
-        </div>
-      </section>
-      <aside className="login-aside">
-        <div className="login-aside-content">
-          <BrandMark />
-          <h2>رحلتك تبدأ من هنا.</h2>
-          <p>
-            منصة واحدة لإدارة الأسطول والرحلات والجداول والحجوزات، مع تجربة
-            بسيطة لفريقك وموثوقة لركابك.
-          </p>
-          <div className="login-feature-list">
-            <span>إدارة الرحلات</span>
-            <span>حجز سريع</span>
-            <span>تقارير واضحة</span>
+    <main className="login">
+      <section className="login-side">
+        <form className="login-form" onSubmit={submit}>
+          <div className="login-brand">
+            <BrandMark size={50} />
+            <strong>رحلتي</strong>
           </div>
-        </div>
+          <h1>تسجيل دخول الموظفين</h1>
+          <p className="login-sub">سجّل الدخول إلى لوحة الإدارة والاستقبال</p>
+
+          {error && <Alert>{error}</Alert>}
+
+          <Field label="رقم الهاتف" icon="phone">
+            <input
+              dir="ltr"
+              inputMode="tel"
+              autoComplete="username"
+              placeholder="09xx xxx xxx"
+              required
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+            />
+          </Field>
+          <Field label="كلمة المرور" icon="lock">
+            <input
+              type="password"
+              autoComplete="current-password"
+              placeholder="••••••••"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </Field>
+
+          <label className="checkbox">
+            <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
+            <span className="box">
+              <Icon name="check" size={13} />
+            </span>
+            تذكّرني على هذا الجهاز
+          </label>
+
+          <button className="btn btn-primary btn-lg btn-block" disabled={busy}>
+            {busy ? "جارٍ تسجيل الدخول…" : "تسجيل الدخول"}
+            <Icon name="arrowLeft" size={18} />
+          </button>
+
+          <p className="login-note">
+            <Icon name="shield" size={16} />
+            هذه اللوحة مخصصة للإدارة وموظفي الاستقبال فقط
+          </p>
+        </form>
+      </section>
+
+      <aside className="login-hero">
+        {/* The picture already contains the slogan and the feature chips */}
+        <h2 className="sr-only">كل رحلات شركتك في مكان واحد</h2>
+        <p className="sr-only">أنشئ الرحلات، وأدر الباصات، واحجز للزبائن من المكتب بنقرات قليلة.</p>
       </aside>
     </main>
   );

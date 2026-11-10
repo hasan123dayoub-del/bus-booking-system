@@ -1,9 +1,11 @@
 import { app } from "./app";
 import { connectDB, disconnectDB } from "./config/db";
 import { env } from "./config/env";
+import { startJobs } from "./jobs";
 
 async function main() {
   await connectDB();
+  startJobs();
   const server = app.listen(env.PORT, () => {
     console.log(`API running on http://localhost:${env.PORT}/api`);
   });

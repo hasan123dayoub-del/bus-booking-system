@@ -1,18 +1,4 @@
-import { BusClass, BusSize } from "../constants";
-
-interface Layout {
-  leftSeats: number;
-  rightSeats: number;
-  hasBackMiddleSeat: boolean;
-}
-
-const LAYOUTS: Record<BusClass, Layout> = {
-  REGULAR: { leftSeats: 2, rightSeats: 2, hasBackMiddleSeat: true },
-  FIRST_CLASS: { leftSeats: 2, rightSeats: 1, hasBackMiddleSeat: false },
-  BUSINESS: { leftSeats: 1, rightSeats: 1, hasBackMiddleSeat: false },
-};
-
-const ROWS: Record<BusSize, number> = { LARGE: 11, MEDIUM: 9 };
+import { BusClass, BusSize, ROWS_BY_SIZE, SEAT_LAYOUTS } from "../constants";
 
 export interface SeatRow {
   row: number;
@@ -31,11 +17,11 @@ export interface SeatMap {
 
 /** Numbering: front to back, left to right. The back middle seat gets the last number. */
 export function buildSeatMap(busClass: BusClass, size: BusSize): SeatMap {
-  const { leftSeats, rightSeats, hasBackMiddleSeat } = LAYOUTS[busClass];
+  const { leftSeats, rightSeats, hasBackMiddleSeat } = SEAT_LAYOUTS[busClass];
   let n = 0;
   const rows: SeatRow[] = [];
 
-  for (let row = 1; row <= ROWS[size]; row++) {
+  for (let row = 1; row <= ROWS_BY_SIZE[size]; row++) {
     const left = Array.from({ length: leftSeats }, () => ++n);
     const right = Array.from({ length: rightSeats }, () => ++n);
     rows.push({ row, left, right });

@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import { Role } from "../constants";
 import { User } from "../models";
-import { AppError } from "../utils/appError";
+import { AppError } from "../utils/AppError";
 import { verifyToken } from "../utils/jwt";
 
 export async function authenticate(req: Request, _res: Response, next: NextFunction) {

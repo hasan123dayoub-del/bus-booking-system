@@ -1,29 +1,30 @@
-import type { BusClass, BusSize } from "@/types/domain";
+import type { BusClass, BusSize } from "./types";
 
-export interface SeatLayout {
-  leftSeats: number;
-  rightSeats: number;
-  rows: number;
-  hasBackMiddleSeat: boolean;
-}
-
-const seatLayouts: Record<BusClass, Omit<SeatLayout, "rows">> = {
-  REGULAR: { leftSeats: 2, rightSeats: 2, hasBackMiddleSeat: true },
-  FIRST_CLASS: { leftSeats: 2, rightSeats: 1, hasBackMiddleSeat: false },
-  BUSINESS: { leftSeats: 1, rightSeats: 1, hasBackMiddleSeat: false },
+/** Same rules as the backend's buildSeatMap: numbered front to back, left to right. */
+const LAYOUTS: Record<BusClass, { left: number; right: number; backMiddle: boolean }> = {
+  REGULAR: { left: 2, right: 2, backMiddle: true },
+  FIRST_CLASS: { left: 2, right: 1, backMiddle: false },
+  BUSINESS: { left: 1, right: 1, backMiddle: false },
 };
+const ROWS: Record<BusSize, number> = { LARGE: 11, MEDIUM: 9 };
 
-export function getSeatLayout(busClass: BusClass, size: BusSize): SeatLayout {
-  return {
-    ...seatLayouts[busClass],
-    rows: size === "LARGE" ? 11 : 9,
-  };
+export interface SeatRow {
+  left: number[];
+  right: number[];
 }
 
-export function getSeatCount(busClass: BusClass, size: BusSize) {
-  const layout = getSeatLayout(busClass, size);
-  return (
-    layout.rows * (layout.leftSeats + layout.rightSeats) +
-    Number(layout.hasBackMiddleSeat)
-  );
+export function seatRows(busClass: BusClass, size: BusSize) {
+  const l = LAYOUTS[busClass];
+  let n = 0;
+  const rows: SeatRow[] = [];
+  for (let r = 0; r < ROWS[size]; r++) {
+    rows.push({
+      left: Array.from({ length: l.left }, () => ++n),
+      right: Array.from({ length: l.right }, () => ++n),
+    });
+  }
+  const backMiddle = l.backMiddle ? ++n : null;
+  return { rows, backMiddle, total: n };
 }
+
+export const seatTotal = (busClass: BusClass, size: BusSize) => seatRows(busClass, size).total;
