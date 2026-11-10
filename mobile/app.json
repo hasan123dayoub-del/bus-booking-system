@@ -2,9 +2,16 @@
   "expo": {
     "name": "mobile",
     "slug": "mobile",
+    "scheme": "rihlati",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
+    "plugins": [
+      "expo-router",
+      "expo-status-bar",
+      "expo-secure-store",
+      "expo-font"
+    ],
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true
