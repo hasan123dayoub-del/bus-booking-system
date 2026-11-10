@@ -19,11 +19,11 @@ type ScheduleShape = Partial<z.infer<typeof base>>;
 
 function check(v: ScheduleShape, ctx: z.RefinementCtx) {
   if (v.from && v.to && v.from === v.to) {
-    ctx.addIssue({ code: z.ZodIssueCode.custom, ...sameCityMessage });
+    ctx.addIssue({ code: "custom", ...sameCityMessage });
   }
   if (v.startDate && v.endDate && v.endDate < v.startDate) {
     ctx.addIssue({
-      code: z.ZodIssueCode.custom,
+      code: "custom",
       message: "تاريخ النهاية قبل تاريخ البداية",
       path: ["endDate"],
     });
@@ -32,14 +32,14 @@ function check(v: ScheduleShape, ctx: z.RefinementCtx) {
   const days = v.days ?? [];
   if (v.frequency === "WEEKLY" && (days.length === 0 || days.some((d) => d > 6))) {
     ctx.addIssue({
-      code: z.ZodIssueCode.custom,
+      code: "custom",
       message: "اختر يوماً واحداً على الأقل من أيام الأسبوع",
       path: ["days"],
     });
   }
   if (v.frequency === "MONTHLY" && (days.length !== 1 || days[0] < 1)) {
     ctx.addIssue({
-      code: z.ZodIssueCode.custom,
+      code: "custom",
       message: "اختر يوماً واحداً من الشهر (1-31)",
       path: ["days"],
     });

@@ -5,7 +5,7 @@ import { DATE_RE, TIME_RE } from "../utils/time";
 export const objectId = z.string().regex(/^[a-f\d]{24}$/i, "معرّف غير صالح");
 export const dateString = z.string().regex(DATE_RE, "صيغة التاريخ YYYY-MM-DD");
 export const timeString = z.string().regex(TIME_RE, "صيغة الوقت HH:mm");
-export const city = z.enum(CITY_CODES, { errorMap: () => ({ message: "مدينة غير معروفة" }) });
+export const city = z.enum(CITY_CODES, { error: "مدينة غير معروفة" });
 export const price = z.coerce.number().int("السعر رقم صحيح").min(0, "السعر لا يكون سالباً");
 
 export const pageQuery = {
