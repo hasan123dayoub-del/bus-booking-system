@@ -9,6 +9,7 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { goToAuth } from '../../lib/auth';
 import { clearSession, CustomerSession, loadSession } from '../../lib/session';
 import { colors } from '../../theme';
 
@@ -231,7 +232,7 @@ export default function AccountScreen() {
               styles.signInButton,
               pressed && styles.pressed,
             ]}
-            onPress={() => router.push('/sign-in')}
+            onPress={() => goToAuth('/account')}
           >
             <Text style={styles.signInButtonText}>تسجيل الدخول</Text>
             <Text style={styles.signInButtonIcon}>←</Text>
@@ -239,7 +240,7 @@ export default function AccountScreen() {
           <Pressable
             accessibilityRole="button"
             style={styles.createAccountButton}
-            onPress={() => router.push('/register')}
+            onPress={() => goToAuth('/account', '/register')}
           >
             <Text style={styles.createAccountText}>إنشاء حساب جديد</Text>
           </Pressable>
