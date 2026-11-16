@@ -1,589 +1,251 @@
-import { useState } from 'react';
-import {
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { useEffect, useState } from 'react';
+import { FlatList, ImageBackground, Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { router } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors } from '../../theme';
+import { Button, GreenHeader, T } from '../../components/ui';
+import { apiRequest } from '../../lib/api';
+import { wasWelcomeSeen } from '../../lib/booking-draft';
+import { CITY_NAMES, cityName } from '../../lib/catalog';
+import { addDays, isSameDay, isoDate, longDate } from '../../lib/format';
+import { loadSession } from '../../lib/session';
+import type { Trip } from '../../lib/types';
+import { colors, shadow } from '../../theme';
 
-const destinations = [
-  { city: 'اللاذقية', detail: 'رحلات إلى الساحل', symbol: '🌊', tone: '#dcefe9' },
-  { city: 'حلب', detail: 'اكتشف المدينة', symbol: '🏛️', tone: '#f3e7d4' },
+interface City {
+  code: string;
+  nameAr: string;
+}
+
+const DESTINATIONS = [
+  { code: 'ALEPPO', image: require('../../../assets/images/aleppo.jpg') },
+  { code: 'LATAKIA', image: require('../../../assets/images/latakia.jpg') },
+  { code: 'DAMASCUS', image: require('../../../assets/images/damascus.jpg') },
 ];
+
+const FALLBACK_CITIES: City[] = Object.entries(CITY_NAMES).map(([code, nameAr]) => ({ code, nameAr }));
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
-  const [origin, setOrigin] = useState('دمشق');
-  const [destination, setDestination] = useState('حلب');
+  const [cities, setCities] = useState<City[]>(FALLBACK_CITIES);
+  const [from, setFrom] = useState('DAMASCUS');
+  const [to, setTo] = useState('ALEPPO');
+  const [date, setDate] = useState(() => new Date());
+  const [picker, setPicker] = useState<'from' | 'to' | 'date' | null>(null);
+  const [counts, setCounts] = useState<Record<string, number>>({});
 
-  function swapCities() {
-    setOrigin(destination);
-    setDestination(origin);
-  }
+  // Guests see the welcome screen once per launch
+  useEffect(() => {
+    loadSession()
+      .then((s) => {
+        if (!s && !wasWelcomeSeen()) router.replace('/welcome');
+      })
+      .catch(() => undefined);
+  }, []);
+
+  useEffect(() => {
+    apiRequest<City[]>('/cities')
+      .then((list) => Array.isArray(list) && list.length && setCities(list))
+      .catch(() => undefined); // the fixed list is enough to search
+  }, []);
+
+  // "N رحلات اليوم" on each destination card, from the selected departure city
+  useEffect(() => {
+    const today = isoDate(new Date());
+    DESTINATIONS.filter((d) => d.code !== from).forEach((d) => {
+      apiRequest<Trip[]>(`/trips?from=${from}&to=${d.code}&date=${today}`)
+        .then((trips) => setCounts((c) => ({ ...c, [`${from}-${d.code}`]: trips.length })))
+        .catch(() => undefined);
+    });
+  }, [from]);
+
+  const search = (dest = to) => {
+    router.push({ pathname: '/trip-results', params: { from, to: dest, date: isoDate(date) } });
+  };
+
+  const pick = (code: string) => {
+    if (picker === 'from') {
+      if (code === to) setTo(from);
+      setFrom(code);
+    } else {
+      if (code === from) setFrom(to);
+      setTo(code);
+    }
+    setPicker(null);
+  };
 
   return (
-    <ScrollView
-      style={styles.screen}
-      contentContainerStyle={styles.content}
-      showsVerticalScrollIndicator={false}
-    >
-      <View style={[styles.hero, { paddingTop: insets.top + 12 }]}>
-        <View style={styles.brandRow}>
-          <View style={styles.brandLockup}>
-            <View style={styles.brandMark}>
-              <Text style={styles.brandGlyph}>ر</Text>
-            </View>
+    <View style={{ flex: 1, backgroundColor: colors.canvas }}>
+      <ScrollView contentContainerStyle={{ paddingBottom: 110 }} showsVerticalScrollIndicator={false}>
+        <GreenHeader height={250}>
+          <View style={styles.topBar}>
             <View>
-              <Text style={styles.brandName}>رحلتي</Text>
-              <Text style={styles.brandCaption}>رحلاتك بكل سهولة</Text>
+              <T size={14} color="rgba(255,255,255,0.85)">مرحباً بك</T>
+              <T w="bold" size={26} color="#fff">إلى أين تريد السفر؟</T>
             </View>
-          </View>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="تسجيل الدخول"
-            style={styles.notificationButton}
-            onPress={() => router.push('/sign-in')}
-          >
-            <Text style={styles.notificationGlyph}>◉</Text>
-          </Pressable>
-        </View>
-
-        <Text style={styles.welcome}>أهلاً بك في رحلتي</Text>
-        <Text style={styles.heroTitle}>رحلتك تبدأ من هنا</Text>
-        <Text style={styles.heroDescription}>
-          اختر وجهتك ودعنا نهتم بباقي تفاصيل الرحلة
-        </Text>
-
-        <View accessibilityLabel="مشهد طريق وحافلة" style={styles.scenery}>
-          <View style={styles.sun} />
-          <View style={styles.farHill} />
-          <View style={styles.nearHill} />
-          <View style={styles.road} />
-          <View style={styles.roadMark} />
-          <Text style={styles.bus}>🚌</Text>
-          <View style={styles.sceneryCaption}>
-            <Text style={styles.sceneryCaptionText}>اكتشف سوريا.. رحلة أجمل</Text>
-          </View>
-        </View>
-      </View>
-
-      <View style={styles.body}>
-        <View style={styles.searchCard}>
-          <View style={styles.cardHeading}>
-            <View>
-              <Text style={styles.eyebrow}>خطوتك الأولى</Text>
-              <Text style={styles.cardTitle}>إلى أين تريد الذهاب؟</Text>
-            </View>
-            <View style={styles.routeIcon}>
-              <Text style={styles.routeIconText}>⌁</Text>
-            </View>
-          </View>
-
-          <View style={styles.routeFields}>
-            <View style={styles.routeField}>
-              <View style={styles.cityDot} />
-              <View style={styles.routeCopy}>
-                <Text style={styles.fieldLabel}>من</Text>
-                <Text style={styles.cityName}>{origin}</Text>
-              </View>
-            </View>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="تبديل مدينتي الانطلاق والوصول"
-              style={styles.swapButton}
-              onPress={swapCities}
-            >
-              <Text style={styles.swapGlyph}>⇅</Text>
+            <Pressable onPress={() => router.push('/account')} style={styles.avatar} accessibilityLabel="حسابي">
+              <Ionicons name="person-outline" size={22} color={colors.deep} />
             </Pressable>
-            <View style={styles.routeField}>
-              <View style={[styles.cityDot, styles.destinationDot]} />
-              <View style={styles.routeCopy}>
-                <Text style={styles.fieldLabel}>إلى</Text>
-                <Text style={styles.cityName}>{destination}</Text>
-              </View>
-            </View>
           </View>
+        </GreenHeader>
 
-          <View style={styles.searchMeta}>
-            <View style={styles.metaItem}>
-              <Text style={styles.metaGlyph}>▦</Text>
-              <View>
-                <Text style={styles.fieldLabel}>موعد الرحلة</Text>
-                <Text style={styles.metaValue}>اختر التاريخ</Text>
+        <View style={[styles.searchCard, shadow]}>
+          <View style={styles.box}>
+            <Pressable style={styles.cityRow} onPress={() => setPicker('from')}>
+              <Ionicons name="radio-button-on" size={22} color={colors.primary} />
+              <View style={{ flex: 1 }}>
+                <T size={13} color={colors.muted}>من</T>
+                <T w="bold" size={20}>{cityName(from)}</T>
               </View>
-            </View>
-            <View style={styles.metaDivider} />
-            <View style={styles.metaItem}>
-              <Text style={styles.metaGlyph}>♙</Text>
-              <View>
-                <Text style={styles.fieldLabel}>عدد الركاب</Text>
-                <Text style={styles.metaValue}>راكب واحد</Text>
+            </Pressable>
+            <View style={styles.divider} />
+            <Pressable style={styles.cityRow} onPress={() => setPicker('to')}>
+              <Ionicons name="location-outline" size={22} color={colors.accent} />
+              <View style={{ flex: 1 }}>
+                <T size={13} color={colors.muted}>إلى</T>
+                <T w="bold" size={20}>{cityName(to)}</T>
               </View>
-            </View>
-          </View>
-
-          <Pressable
-            accessibilityRole="button"
-            style={({ pressed }) => [
-              styles.searchButton,
-              pressed && styles.buttonPressed,
-            ]}
-            onPress={() => router.push('/trip-search')}
-          >
-            <Text style={styles.searchButtonText}>ابحث عن رحلة</Text>
-            <Text style={styles.searchButtonGlyph}>⌕</Text>
-          </Pressable>
-        </View>
-
-        <View style={styles.sectionHeading}>
-          <View>
-            <Text style={styles.eyebrow}>وجهات مميزة</Text>
-            <Text style={styles.sectionTitle}>اكتشف وجهاتنا</Text>
-          </View>
-          <Text style={styles.sectionHint}>رحلتك القادمة بانتظارك</Text>
-        </View>
-
-        <View style={styles.destinationList}>
-          {destinations.map((item) => (
+            </Pressable>
             <Pressable
-              key={item.city}
-              accessibilityRole="button"
-              accessibilityLabel={`استكشف ${item.city}`}
-              style={({ pressed }) => [
-                styles.destinationCard,
-                { backgroundColor: item.tone },
-                pressed && styles.buttonPressed,
-              ]}
+              style={styles.swap}
               onPress={() => {
-                setDestination(item.city);
+                setFrom(to);
+                setTo(from);
               }}
+              accessibilityLabel="تبديل مدينتي الانطلاق والوصول"
             >
-              <View style={styles.destinationArtwork}>
-                <Text style={styles.destinationSymbol}>{item.symbol}</Text>
-                <View style={styles.destinationSun} />
-                <View style={styles.destinationHorizon} />
-              </View>
-              <View style={styles.destinationCopy}>
-                <Text style={styles.destinationName}>{item.city}</Text>
-                <Text style={styles.destinationDetail}>{item.detail}</Text>
-              </View>
-              <Text style={styles.destinationArrow}>←</Text>
+              <Ionicons name="swap-vertical" size={24} color="#fff" />
             </Pressable>
-          ))}
+          </View>
+
+          <Pressable style={[styles.box, styles.dateBox]} onPress={() => setPicker('date')}>
+            <View style={styles.calendar}>
+              <Ionicons name="calendar-outline" size={22} color={colors.primary} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <T size={13} color={colors.muted}>تاريخ السفر</T>
+              <T w="medium" size={17}>{longDate(date)}</T>
+            </View>
+            {isSameDay(date, new Date()) ? (
+              <View style={styles.todayPill}>
+                <T w="medium" size={13} color={colors.primary}>اليوم</T>
+              </View>
+            ) : null}
+          </Pressable>
+
+          <Button label="ابحث عن رحلة" icon="search" onPress={() => search()} />
         </View>
-      </View>
-    </ScrollView>
+
+        <View style={styles.sectionHeader}>
+          <T w="bold" size={20}>وجهات شائعة</T>
+          <Pressable onPress={() => setPicker('to')}>
+            <T w="medium" size={14} color={colors.primary}>عرض الكل</T>
+          </Pressable>
+        </View>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.carousel} style={{ transform: [{ scaleX: -1 }] }}>
+          {DESTINATIONS.map((d) => {
+            const count = counts[`${from}-${d.code}`];
+            return (
+              <Pressable
+                key={d.code}
+                onPress={() => {
+                  if (d.code === from) return setPicker('from');
+                  setTo(d.code);
+                  search(d.code);
+                }}
+                style={{ transform: [{ scaleX: -1 }] }}
+              >
+                <ImageBackground source={d.image} style={styles.destination} imageStyle={{ borderRadius: 24 }}>
+                  <LinearGradient colors={['transparent', 'rgba(0,0,0,0.65)']} style={[StyleSheet.absoluteFill, { borderRadius: 24 }]} />
+                  <View style={styles.destinationText}>
+                    <T w="bold" size={20} color="#fff">{cityName(d.code)}</T>
+                    {d.code !== from && count !== undefined ? (
+                      <T size={12.5} color="rgba(255,255,255,0.9)">{tripsToday(count)}</T>
+                    ) : null}
+                  </View>
+                </ImageBackground>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      </ScrollView>
+
+      <Modal visible={picker !== null} transparent animationType="slide" onRequestClose={() => setPicker(null)}>
+        <Pressable style={styles.backdrop} onPress={() => setPicker(null)} />
+        <View style={[styles.sheet, { paddingBottom: insets.bottom + 16 }]}>
+          <View style={styles.handle} />
+          <T w="bold" size={18} style={{ marginBottom: 8 }}>
+            {picker === 'date' ? 'تاريخ السفر' : picker === 'from' ? 'مدينة الانطلاق' : 'مدينة الوصول'}
+          </T>
+          {picker === 'date' ? (
+            <FlatList
+              data={Array.from({ length: 30 }, (_, i) => addDays(new Date(), i))}
+              keyExtractor={(d) => isoDate(d)}
+              renderItem={({ item }) => (
+                <Option label={longDate(item)} active={isSameDay(item, date)} onPress={() => { setDate(item); setPicker(null); }} />
+              )}
+            />
+          ) : (
+            <FlatList
+              data={cities}
+              keyExtractor={(c) => c.code}
+              renderItem={({ item }) => (
+                <Option label={item.nameAr} active={item.code === (picker === 'from' ? from : to)} onPress={() => pick(item.code)} />
+              )}
+            />
+          )}
+        </View>
+      </Modal>
+    </View>
+  );
+}
+
+function tripsToday(n: number) {
+  if (n === 0) return 'لا رحلات اليوم';
+  if (n === 1) return 'رحلة واحدة اليوم';
+  if (n === 2) return 'رحلتان اليوم';
+  return `${n} رحلات اليوم`;
+}
+
+function Option({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
+  return (
+    <Pressable onPress={onPress} style={[styles.option, active && { backgroundColor: colors.primarySoft }]}>
+      <T w={active ? 'bold' : 'medium'} size={16} color={active ? colors.primary : colors.ink}>{label}</T>
+      {active ? <Ionicons name="checkmark" size={20} color={colors.primary} /> : null}
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: colors.canvas,
-  },
-  content: {
-    paddingBottom: 24,
-  },
-  hero: {
-    overflow: 'hidden',
-    paddingHorizontal: 22,
-    paddingBottom: 38,
-    backgroundColor: colors.primaryDark,
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
-  },
-  brandRow: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  brandLockup: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    gap: 10,
-  },
-  brandMark: {
+  topBar: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 24, marginTop: 28 },
+  avatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.accent, alignItems: 'center', justifyContent: 'center' },
+  searchCard: { marginTop: -112, marginHorizontal: 16, backgroundColor: colors.surface, borderRadius: 28, padding: 16, gap: 12 },
+  box: { borderWidth: 1, borderColor: colors.line, borderRadius: 20, backgroundColor: '#F7F9F8', paddingHorizontal: 16 },
+  cityRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: 12, paddingVertical: 12, paddingLeft: 64 },
+  divider: { height: 1, backgroundColor: colors.line, marginLeft: 64 },
+  swap: {
+    position: 'absolute',
+    left: 14,
+    top: '50%',
+    marginTop: -21,
     width: 42,
     height: 42,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 14,
-    borderBottomLeftRadius: 5,
-    backgroundColor: colors.surface,
-  },
-  brandGlyph: {
-    color: colors.primaryDark,
-    fontSize: 22,
-    fontWeight: '800',
-  },
-  brandName: {
-    color: colors.surface,
-    fontSize: 18,
-    fontWeight: '800',
-    textAlign: 'right',
-  },
-  brandCaption: {
-    marginTop: 2,
-    color: '#b5d3c9',
-    fontSize: 10,
-    textAlign: 'right',
-  },
-  notificationButton: {
-    width: 38,
-    height: 38,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 13,
-    backgroundColor: 'rgba(255,255,255,0.12)',
-  },
-  notificationGlyph: {
-    color: colors.surface,
-    fontSize: 22,
-  },
-  welcome: {
-    marginTop: 23,
-    color: '#b5d3c9',
-    fontSize: 12,
-    textAlign: 'right',
-  },
-  heroTitle: {
-    marginTop: 5,
-    color: colors.surface,
-    fontSize: 26,
-    fontWeight: '800',
-    textAlign: 'right',
-  },
-  heroDescription: {
-    marginTop: 5,
-    color: '#d9eae4',
-    fontSize: 12,
-    lineHeight: 20,
-    textAlign: 'right',
-  },
-  scenery: {
-    height: 150,
-    marginTop: 18,
-    overflow: 'hidden',
-    justifyContent: 'flex-end',
-    borderRadius: 20,
-    backgroundColor: '#9abfae',
-  },
-  sun: {
-    position: 'absolute',
-    top: 19,
-    right: 33,
-    width: 33,
-    height: 33,
-    borderRadius: 17,
-    backgroundColor: '#f5c977',
-  },
-  farHill: {
-    position: 'absolute',
-    right: -24,
-    bottom: 30,
-    width: 240,
-    height: 105,
-    borderTopLeftRadius: 150,
-    borderTopRightRadius: 150,
-    transform: [{ rotate: '-9deg' }],
-    backgroundColor: '#5d8e78',
-  },
-  nearHill: {
-    position: 'absolute',
-    left: -35,
-    bottom: 19,
-    width: 230,
-    height: 83,
-    borderTopLeftRadius: 130,
-    borderTopRightRadius: 130,
-    transform: [{ rotate: '10deg' }],
-    backgroundColor: '#3e755e',
-  },
-  road: {
-    position: 'absolute',
-    right: 91,
-    bottom: -34,
-    width: 88,
-    height: 105,
-    borderTopLeftRadius: 50,
-    borderTopRightRadius: 50,
-    transform: [{ rotate: '-15deg' }],
-    backgroundColor: '#485d52',
-  },
-  roadMark: {
-    position: 'absolute',
-    right: 129,
-    bottom: 1,
-    width: 4,
-    height: 24,
-    borderRadius: 2,
-    transform: [{ rotate: '-15deg' }],
-    backgroundColor: '#f4e4b7',
-  },
-  bus: {
-    position: 'absolute',
-    right: 69,
-    bottom: 37,
-    fontSize: 38,
-  },
-  sceneryCaption: {
-    paddingHorizontal: 13,
-    paddingVertical: 9,
-    backgroundColor: 'rgba(6,74,59,0.78)',
-  },
-  sceneryCaptionText: {
-    color: colors.surface,
-    fontSize: 10,
-    fontWeight: '700',
-    textAlign: 'right',
-  },
-  body: {
-    paddingHorizontal: 18,
-  },
-  searchCard: {
-    marginTop: -19,
-    padding: 17,
-    borderWidth: 1,
-    borderColor: colors.line,
-    borderRadius: 20,
-    backgroundColor: colors.surface,
-    shadowColor: '#17352b',
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.08,
-    shadowRadius: 14,
-    elevation: 3,
-  },
-  cardHeading: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  eyebrow: {
-    color: colors.primary,
-    fontSize: 10,
-    fontWeight: '700',
-    textAlign: 'right',
-  },
-  cardTitle: {
-    marginTop: 3,
-    color: colors.ink,
-    fontSize: 16,
-    fontWeight: '800',
-    textAlign: 'right',
-  },
-  routeIcon: {
-    width: 36,
-    height: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 12,
-    backgroundColor: colors.primarySoft,
-  },
-  routeIconText: {
-    color: colors.primary,
-    fontSize: 24,
-    fontWeight: '700',
-  },
-  routeFields: {
-    position: 'relative',
-    marginTop: 15,
-    gap: 8,
-  },
-  routeField: {
-    minHeight: 56,
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    gap: 11,
-    paddingHorizontal: 13,
-    borderWidth: 1,
-    borderColor: colors.line,
-    borderRadius: 13,
-    backgroundColor: '#fbfdfc',
-  },
-  cityDot: {
-    width: 10,
-    height: 10,
-    borderWidth: 2,
-    borderColor: colors.primary,
-    borderRadius: 5,
-  },
-  destinationDot: {
-    borderColor: colors.accent,
-  },
-  routeCopy: {
-    flex: 1,
-    alignItems: 'flex-end',
-  },
-  fieldLabel: {
-    color: colors.muted,
-    fontSize: 10,
-    textAlign: 'right',
-  },
-  cityName: {
-    marginTop: 2,
-    color: colors.ink,
-    fontSize: 14,
-    fontWeight: '700',
-    textAlign: 'right',
-  },
-  swapButton: {
-    position: 'absolute',
-    zIndex: 1,
-    top: 37,
-    left: 13,
-    width: 30,
-    height: 30,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: colors.line,
-    borderRadius: 10,
-    backgroundColor: colors.surface,
-  },
-  swapGlyph: {
-    color: colors.primary,
-    fontSize: 19,
-    fontWeight: '700',
-  },
-  searchMeta: {
-    minHeight: 54,
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: 13,
-  },
-  metaItem: {
-    flex: 1,
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    gap: 8,
-  },
-  metaGlyph: {
-    color: colors.primary,
-    fontSize: 19,
-  },
-  metaValue: {
-    marginTop: 2,
-    color: colors.ink,
-    fontSize: 11,
-    fontWeight: '700',
-    textAlign: 'right',
-  },
-  metaDivider: {
-    width: 1,
-    height: 31,
-    marginHorizontal: 8,
-    backgroundColor: colors.line,
-  },
-  searchButton: {
-    minHeight: 48,
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    marginTop: 5,
-    borderRadius: 13,
+    borderRadius: 21,
     backgroundColor: colors.primary,
-  },
-  searchButtonText: {
-    color: colors.surface,
-    fontSize: 13,
-    fontWeight: '800',
-  },
-  searchButtonGlyph: {
-    color: colors.surface,
-    fontSize: 20,
-  },
-  sectionHeading: {
-    flexDirection: 'row-reverse',
-    alignItems: 'flex-end',
-    justifyContent: 'space-between',
-    marginTop: 25,
-    marginBottom: 12,
-  },
-  sectionTitle: {
-    marginTop: 3,
-    color: colors.ink,
-    fontSize: 16,
-    fontWeight: '800',
-    textAlign: 'right',
-  },
-  sectionHint: {
-    color: colors.muted,
-    fontSize: 9,
-    textAlign: 'left',
-  },
-  destinationList: {
-    flexDirection: 'row-reverse',
-    gap: 10,
-  },
-  destinationCard: {
-    flex: 1,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: colors.line,
-    borderRadius: 16,
-    backgroundColor: colors.surface,
-  },
-  destinationArtwork: {
-    height: 88,
     alignItems: 'center',
     justifyContent: 'center',
-    overflow: 'hidden',
+    ...shadow,
   },
-  destinationSymbol: {
-    zIndex: 1,
-    fontSize: 29,
-  },
-  destinationSun: {
-    position: 'absolute',
-    top: 12,
-    right: 19,
-    width: 17,
-    height: 17,
-    borderRadius: 9,
-    backgroundColor: '#f5c977',
-  },
-  destinationHorizon: {
-    position: 'absolute',
-    right: -5,
-    bottom: -27,
-    left: -5,
-    height: 56,
-    borderTopLeftRadius: 60,
-    borderTopRightRadius: 60,
-    backgroundColor: 'rgba(15,110,86,0.24)',
-  },
-  destinationCopy: {
-    alignItems: 'flex-end',
-    paddingHorizontal: 10,
-    paddingTop: 8,
-    paddingBottom: 10,
-  },
-  destinationName: {
-    color: colors.ink,
-    fontSize: 12,
-    fontWeight: '800',
-    textAlign: 'right',
-  },
-  destinationDetail: {
-    marginTop: 3,
-    color: colors.muted,
-    fontSize: 9,
-    textAlign: 'right',
-  },
-  destinationArrow: {
-    position: 'absolute',
-    bottom: 8,
-    left: 9,
-    color: colors.primary,
-    fontSize: 13,
-  },
-  buttonPressed: {
-    opacity: 0.78,
-  },
+  dateBox: { flexDirection: 'row-reverse', alignItems: 'center', gap: 12, paddingVertical: 12 },
+  calendar: { width: 38, height: 38, borderRadius: 12, backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center' },
+  todayPill: { height: 26, paddingHorizontal: 12, borderRadius: 13, backgroundColor: colors.primarySoft, justifyContent: 'center' },
+  sectionHeader: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, marginTop: 22, marginBottom: 10 },
+  carousel: { paddingHorizontal: 16, gap: 12 },
+  destination: { width: 150, height: 176, justifyContent: 'flex-end' },
+  destinationText: { padding: 14 },
+  backdrop: { flex: 1, backgroundColor: 'rgba(18,33,29,0.45)' },
+  sheet: { width: '100%', maxWidth: 390, alignSelf: 'center', maxHeight: '70%', backgroundColor: colors.surface, borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 20 },
+  handle: { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: colors.line, marginBottom: 12 },
+  option: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 12, borderRadius: 12 },
 });

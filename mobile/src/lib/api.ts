@@ -1,7 +1,14 @@
+import Constants from 'expo-constants';
 import { loadSession } from './session';
-const API_BASE_URL = (
-  process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:4000/api'
-).replace(/\/+$/, '');
+
+// On a phone, "localhost" is the phone itself. Without EXPO_PUBLIC_API_URL, use the
+// computer that serves the app (the Expo dev server host, e.g. 192.168.1.5:8081) on port 4000.
+function defaultApiUrl() {
+  const host = Constants.expoConfig?.hostUri?.split(':')[0];
+  return `http://${host || 'localhost'}:4000/api`;
+}
+
+const API_BASE_URL = (process.env.EXPO_PUBLIC_API_URL || defaultApiUrl()).replace(/\/+$/, '');
 
 export async function apiRequest<T>(
   path: string,
@@ -41,6 +48,8 @@ export async function apiRequest<T>(
     throw new Error(message);
   }
 
+  // The API wraps every successful response as { data }
+  if (isRecord(payload) && 'data' in payload) return payload.data as T;
   return payload as T;
 }
 

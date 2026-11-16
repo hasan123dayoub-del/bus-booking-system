@@ -1,377 +1,245 @@
-import { router } from 'expo-router';
+import { useCallback, useState, type ReactNode } from 'react';
+import { Modal, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { router, useFocusEffect } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { colors } from '../../theme';
-
-type BookingFilter = 'upcoming' | 'past';
+import { Button, ErrorText, GreenHeader, HeaderRow, Loading, Route, SeatChip, StatusBadge, T } from '../../components/ui';
+import { apiRequest } from '../../lib/api';
+import { goToAuth } from '../../lib/auth';
+import { cityName } from '../../lib/catalog';
+import { longDate, price, shortDate, time12 } from '../../lib/format';
+import { loadSession } from '../../lib/session';
+import type { Booking } from '../../lib/types';
+import { colors, shadow } from '../../theme';
 
 export default function BookingsScreen() {
-  const insets = useSafeAreaInsets();
-  const [filter, setFilter] = useState<BookingFilter>('upcoming');
-  const isUpcoming = filter === 'upcoming';
+  const [bookings, setBookings] = useState<Booking[] | null>(null);
+  const [signedIn, setSignedIn] = useState(true);
+  const [tab, setTab] = useState<'upcoming' | 'past'>('upcoming');
+  const [error, setError] = useState('');
+  const [cancelling, setCancelling] = useState<Booking | null>(null);
+  const [open, setOpen] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    setError('');
+    const session = await loadSession().catch(() => null);
+    if (!session) {
+      setSignedIn(false);
+      setBookings([]);
+      return;
+    }
+    setSignedIn(true);
+    try {
+      setBookings(await apiRequest<Booking[]>('/me/bookings'));
+    } catch (e) {
+      setBookings([]);
+      setError(e instanceof Error ? e.message : 'تعذر تحميل الحجوزات.');
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [load]),
+  );
+
+  const now = Date.now();
+  const isUpcoming = (b: Booking) => b.status === 'CONFIRMED' && !!b.trip && new Date(b.trip.departureAt).getTime() > now;
+  const upcoming = (bookings ?? []).filter(isUpcoming);
+  const shown = tab === 'upcoming' ? upcoming : (bookings ?? []).filter((b) => !isUpcoming(b));
 
   return (
-    <ScrollView
-      style={styles.screen}
-      contentContainerStyle={[
-        styles.content,
-        { paddingTop: insets.top + 22, paddingBottom: insets.bottom + 28 },
-      ]}
-      showsVerticalScrollIndicator={false}
-    >
-      <View style={styles.header}>
-        <View style={styles.headerCopy}>
-          <Text style={styles.eyebrow}>رحلاتك في مكان واحد</Text>
-          <Text style={styles.title}>حجوزاتي</Text>
-        </View>
-        <View style={styles.headerIcon}>
-          <Text style={styles.headerIconText}>▤</Text>
-        </View>
+    <View style={{ flex: 1, backgroundColor: colors.canvas }}>
+      <GreenHeader height={116}>
+        <HeaderRow title="حجوزاتي" subtitle={signedIn && bookings ? upcomingCount(upcoming.length) : undefined} onBack={() => router.navigate('/')} />
+      </GreenHeader>
+
+      <View style={styles.tabs}>
+        <Tab label="قادمة" active={tab === 'upcoming'} onPress={() => setTab('upcoming')} />
+        <Tab label="سابقة" active={tab === 'past'} onPress={() => setTab('past')} />
       </View>
 
-      <Text style={styles.subtitle}>
-        تابع تفاصيل رحلاتك القادمة وسجل رحلاتك السابقة
-      </Text>
+      <ScrollView
+        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 110, gap: 14 }}
+        refreshControl={<RefreshControl refreshing={false} onRefresh={load} tintColor={colors.primary} />}
+      >
+        <ErrorText message={error} />
+        {bookings === null ? <Loading /> : null}
 
-      <View style={styles.filters}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityState={{ selected: isUpcoming }}
-          onPress={() => setFilter('upcoming')}
-          style={[styles.filterButton, isUpcoming && styles.filterSelected]}
-        >
-          <Text
-            style={[
-              styles.filterText,
-              isUpcoming && styles.filterTextSelected,
-            ]}
-          >
-            القادمة
-          </Text>
-        </Pressable>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityState={{ selected: !isUpcoming }}
-          onPress={() => setFilter('past')}
-          style={[styles.filterButton, !isUpcoming && styles.filterSelected]}
-        >
-          <Text
-            style={[
-              styles.filterText,
-              !isUpcoming && styles.filterTextSelected,
-            ]}
-          >
-            السابقة
-          </Text>
-        </Pressable>
-      </View>
+        {!signedIn ? (
+          <Empty
+            title="سجّل الدخول لترى حجوزاتك"
+            text="حجوزاتك القادمة والسابقة تظهر هنا بعد تسجيل الدخول."
+            action={<Button label="تسجيل الدخول" onPress={() => goToAuth('/bookings')} />}
+          />
+        ) : bookings && !shown.length && !error ? (
+          <Empty
+            title={tab === 'upcoming' ? 'لا توجد حجوزات قادمة' : 'لا توجد حجوزات سابقة'}
+            text={tab === 'upcoming' ? 'ابحث عن رحلة واحجز مقعدك، وسيظهر الحجز هنا.' : 'الرحلات المكتملة والملغاة تظهر هنا.'}
+            action={tab === 'upcoming' ? <Button label="ابحث عن رحلة" icon="search" onPress={() => router.navigate('/')} /> : null}
+          />
+        ) : null}
 
-      <View style={styles.emptyCard}>
-        <View style={styles.illustration}>
-          <View style={styles.ticket}>
-            <View style={styles.ticketTop}>
-              <View style={styles.ticketDot} />
-              <View style={styles.ticketDash} />
-              <View style={styles.ticketDot} />
+        {shown.map((b) => {
+          const at = b.trip ? new Date(b.trip.departureAt) : null;
+          const expanded = open === b._id;
+          return (
+            <View key={b._id} style={styles.card}>
+              <View style={styles.rowBetween}>
+                <T size={14} color={colors.muted}>{b.code}</T>
+                <StatusBadge status={b.status} />
+              </View>
+              {b.trip ? <Route from={cityName(b.trip.from)} to={cityName(b.trip.to)} /> : null}
+              {at ? (
+                <View style={styles.row}>
+                  <Ionicons name="time-outline" size={18} color={colors.primary} />
+                  <T size={14} color={colors.muted}>{`${longDate(at)} · ${time12(at)}`}</T>
+                </View>
+              ) : null}
+              <View style={styles.row}>
+                {b.seats.map((s) => <SeatChip key={s.seatNumber} n={s.seatNumber} />)}
+              </View>
+
+              {expanded ? (
+                <View style={styles.details}>
+                  {b.seats.map((s) => (
+                    <View key={s.seatNumber} style={styles.rowBetween}>
+                      <T size={14} color={colors.muted}>{`مقعد ${s.seatNumber}`}</T>
+                      <T w="medium" size={14}>{s.passengerName}</T>
+                    </View>
+                  ))}
+                  <View style={styles.rowBetween}>
+                    <T size={14} color={colors.muted}>الدفع</T>
+                    <T w="medium" size={14}>{b.paymentMethod === 'SHAM_CASH' ? `شام كاش${b.paymentRef ? ` · ${b.paymentRef}` : ''}` : 'نقداً'}</T>
+                  </View>
+                </View>
+              ) : null}
+
+              <View style={styles.footer}>
+                {b.canCancel ? (
+                  <Button label="إلغاء الحجز" icon="close" variant="dangerOutline" onPress={() => setCancelling(b)} />
+                ) : (
+                  <Pressable onPress={() => setOpen(expanded ? null : b._id)} style={[styles.row, { paddingVertical: 8 }]}>
+                    <T w="medium" size={15} color={colors.primary}>{expanded ? 'إخفاء التفاصيل' : 'التفاصيل'}</T>
+                    <Ionicons name={expanded ? 'chevron-up' : 'chevron-back'} size={18} color={colors.primary} />
+                  </Pressable>
+                )}
+                <T w="bold" size={20} color={colors.primary}>{price(b.total)}</T>
+              </View>
             </View>
-            <View style={styles.ticketBody}>
-              <View style={styles.ticketLine} />
-              <View style={styles.ticketLineShort} />
+          );
+        })}
+      </ScrollView>
+
+      <CancelSheet
+        booking={cancelling}
+        onClose={() => setCancelling(null)}
+        onCancelled={() => {
+          setCancelling(null);
+          load();
+        }}
+      />
+    </View>
+  );
+}
+
+function upcomingCount(n: number) {
+  if (n === 0) return 'لا حجوزات قادمة';
+  if (n === 1) return 'حجز قادم واحد';
+  if (n === 2) return 'حجزان قادمان';
+  return `${n} حجوزات قادمة`;
+}
+
+/** Screen 9: bottom sheet that confirms the cancellation and shows the refund */
+function CancelSheet({ booking, onClose, onCancelled }: { booking: Booking | null; onClose: () => void; onCancelled: () => void }) {
+  const insets = useSafeAreaInsets();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const at = booking?.trip ? new Date(booking.trip.departureAt) : null;
+
+  async function confirm() {
+    if (!booking) return;
+    setBusy(true);
+    setError('');
+    try {
+      await apiRequest(`/bookings/${booking._id}/cancel`, { method: 'POST' });
+      onCancelled();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'تعذر إلغاء الحجز حالياً.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Modal visible={!!booking} transparent animationType="slide" onRequestClose={onClose} onShow={() => setError('')}>
+      <Pressable style={styles.backdrop} onPress={onClose} />
+      {booking ? (
+        <View style={[styles.sheet, { paddingBottom: insets.bottom + 20 }]}>
+          <View style={styles.handle} />
+          <T w="bold" size={24}>إلغاء الحجز؟</T>
+          <T size={15} color={colors.muted}>{`هل تريد إلغاء الحجز ${booking.code}؟ ستعود المقاعد متاحة للمسافرين الآخرين.`}</T>
+          <View style={styles.summary}>
+            {booking.trip && at ? (
+              <View style={styles.rowBetween}>
+                <T size={14} color={colors.muted}>الرحلة</T>
+                <T w="medium" size={14}>{`${cityName(booking.trip.from)} ← ${cityName(booking.trip.to)} · ${shortDate(at)} · ${time12(at)}`}</T>
+              </View>
+            ) : null}
+            <View style={styles.rowBetween}>
+              <T size={14} color={colors.muted}>المقاعد</T>
+              <T w="medium" size={14}>{booking.seats.map((s) => `مقعد ${s.seatNumber}`).join('، ')}</T>
+            </View>
+            <View style={styles.rowBetween}>
+              <T size={14} color={colors.muted}>المبلغ المسترد</T>
+              <T w="bold" size={18} color={colors.primary}>{price(booking.refundIfCancelled ?? booking.total)}</T>
             </View>
           </View>
-          <View style={styles.busBadge}>
-            <Text style={styles.busGlyph}>⌑</Text>
+          <View style={styles.warn}>
+            <T size={13} color={colors.wait}>يحوّل موظف الاستقبال المبلغ إلى محفظة شام كاش خلال يوم عمل. يمكن الإلغاء حتى ساعتين قبل موعد الرحلة.</T>
           </View>
-          <View style={styles.sparkleOne} />
-          <View style={styles.sparkleTwo} />
+          <ErrorText message={error} />
+          <Button label="تأكيد الإلغاء" variant="danger" onPress={confirm} busy={busy} />
+          <Button label="تراجع" variant="outline" onPress={onClose} />
         </View>
+      ) : null}
+    </Modal>
+  );
+}
 
-        <Text style={styles.emptyTitle}>
-          {isUpcoming ? 'لا توجد رحلات قادمة' : 'لا توجد رحلات سابقة'}
-        </Text>
-        <Text style={styles.emptyDescription}>
-          {isUpcoming
-            ? 'عندما تحجز رحلة، ستظهر تفاصيلها هنا لتتمكن من الرجوع إليها بسهولة.'
-            : 'ستظهر رحلاتك المكتملة هنا بعد توفر خدمة الحجز.'}
-        </Text>
+function Tab({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
+  return (
+    <Pressable onPress={onPress} style={[styles.tab, active && styles.tabActive]}>
+      <T w={active ? 'bold' : 'medium'} size={16} color={active ? colors.primary : colors.muted} style={{ textAlign: 'center' }}>
+        {label}
+      </T>
+    </Pressable>
+  );
+}
 
-        <View style={styles.previewNotice}>
-          <Text style={styles.noticeMark}>i</Text>
-          <Text style={styles.noticeText}>
-            هذه الصفحة بانتظار ربط خدمة الحجوزات. لم تُنشأ حجوزات فعلية في
-            المعاينة.
-          </Text>
-        </View>
-
-        <Pressable
-          accessibilityRole="button"
-          style={({ pressed }) => [
-            styles.searchButton,
-            pressed && styles.buttonPressed,
-          ]}
-          onPress={() => router.push('/trip-search')}
-        >
-          <Text style={styles.searchButtonText}>ابحث عن رحلة</Text>
-          <Text style={styles.searchButtonIcon}>←</Text>
-        </Pressable>
-      </View>
-    </ScrollView>
+function Empty({ title, text, action }: { title: string; text: string; action: ReactNode }) {
+  return (
+    <View style={[styles.card, { alignItems: 'center', paddingVertical: 28 }]}>
+      <Ionicons name="ticket-outline" size={38} color={colors.muted} />
+      <T w="bold" size={17} style={{ textAlign: 'center' }}>{title}</T>
+      <T size={14} color={colors.muted} style={{ textAlign: 'center' }}>{text}</T>
+      {action ? <View style={{ alignSelf: 'stretch', marginTop: 8 }}>{action}</View> : null}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: colors.canvas,
-  },
-  content: {
-    flexGrow: 1,
-    paddingHorizontal: 20,
-  },
-  header: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  headerCopy: {
-    alignItems: 'flex-end',
-  },
-  eyebrow: {
-    color: colors.primary,
-    fontFamily: 'Cairo_700Bold',
-    fontSize: 11,
-  },
-  title: {
-    marginTop: 1,
-    color: colors.ink,
-    fontFamily: 'Cairo_800ExtraBold',
-    fontSize: 25,
-  },
-  headerIcon: {
-    width: 43,
-    height: 43,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 14,
-    backgroundColor: colors.primarySoft,
-  },
-  headerIconText: {
-    color: colors.primary,
-    fontSize: 23,
-  },
-  subtitle: {
-    marginTop: 4,
-    color: colors.muted,
-    fontFamily: 'Cairo_400Regular',
-    fontSize: 12,
-    textAlign: 'right',
-  },
-  filters: {
-    flexDirection: 'row-reverse',
-    gap: 8,
-    marginTop: 24,
-    padding: 4,
-    borderRadius: 13,
-    backgroundColor: '#e9efeb',
-  },
-  filterButton: {
-    flex: 1,
-    minHeight: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 10,
-  },
-  filterSelected: {
-    backgroundColor: colors.surface,
-    shadowColor: '#17352b',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.07,
-    shadowRadius: 5,
-    elevation: 1,
-  },
-  filterText: {
-    color: colors.muted,
-    fontFamily: 'Cairo_700Bold',
-    fontSize: 12,
-  },
-  filterTextSelected: {
-    color: colors.primaryDark,
-  },
-  emptyCard: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 17,
-    paddingHorizontal: 19,
-    paddingVertical: 28,
-    borderWidth: 1,
-    borderColor: colors.line,
-    borderRadius: 20,
-    backgroundColor: colors.surface,
-  },
-  illustration: {
-    width: 130,
-    height: 116,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 17,
-    borderRadius: 40,
-    backgroundColor: '#eff8f4',
-  },
-  ticket: {
-    width: 87,
-    height: 59,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: '#c4e4d7',
-    borderRadius: 12,
-    backgroundColor: colors.surface,
-    transform: [{ rotate: '-7deg' }],
-  },
-  ticketTop: {
-    height: 18,
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    justifyContent: 'space-around',
-    borderBottomWidth: 1,
-    borderBottomColor: '#dcece5',
-    backgroundColor: '#f5fbf8',
-  },
-  ticketDot: {
-    width: 5,
-    height: 5,
-    borderRadius: 3,
-    backgroundColor: '#afd8c8',
-  },
-  ticketDash: {
-    width: 35,
-    height: 2,
-    borderRadius: 2,
-    backgroundColor: '#d0e7dc',
-  },
-  ticketBody: {
-    flex: 1,
-    alignItems: 'flex-end',
-    justifyContent: 'center',
-    gap: 6,
-    paddingHorizontal: 11,
-  },
-  ticketLine: {
-    width: 49,
-    height: 4,
-    borderRadius: 3,
-    backgroundColor: '#dcece5',
-  },
-  ticketLineShort: {
-    width: 29,
-    height: 4,
-    borderRadius: 3,
-    backgroundColor: '#edf4f0',
-  },
-  busBadge: {
-    position: 'absolute',
-    right: 12,
-    bottom: 12,
-    width: 34,
-    height: 34,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 3,
-    borderColor: '#eff8f4',
-    borderRadius: 12,
-    backgroundColor: colors.primary,
-  },
-  busGlyph: {
-    color: colors.surface,
-    fontFamily: 'Cairo_800ExtraBold',
-    fontSize: 21,
-    lineHeight: 25,
-  },
-  sparkleOne: {
-    position: 'absolute',
-    top: 16,
-    right: 23,
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-    backgroundColor: colors.accent,
-  },
-  sparkleTwo: {
-    position: 'absolute',
-    top: 35,
-    left: 18,
-    width: 5,
-    height: 5,
-    borderRadius: 3,
-    backgroundColor: '#84c5aa',
-  },
-  emptyTitle: {
-    color: colors.ink,
-    fontFamily: 'Cairo_800ExtraBold',
-    fontSize: 18,
-    textAlign: 'center',
-  },
-  emptyDescription: {
-    maxWidth: 290,
-    marginTop: 7,
-    color: colors.muted,
-    fontFamily: 'Cairo_400Regular',
-    fontSize: 12,
-    lineHeight: 19,
-    textAlign: 'center',
-  },
-  previewNotice: {
-    flexDirection: 'row-reverse',
-    alignItems: 'flex-start',
-    gap: 8,
-    alignSelf: 'stretch',
-    marginTop: 18,
-    padding: 11,
-    borderRadius: 12,
-    backgroundColor: '#f5f8f6',
-  },
-  noticeMark: {
-    width: 18,
-    height: 18,
-    overflow: 'hidden',
-    borderRadius: 9,
-    backgroundColor: colors.primarySoft,
-    color: colors.primary,
-    fontFamily: 'Cairo_800ExtraBold',
-    fontSize: 12,
-    lineHeight: 18,
-    textAlign: 'center',
-  },
-  noticeText: {
-    flex: 1,
-    color: colors.muted,
-    fontFamily: 'Cairo_400Regular',
-    fontSize: 10,
-    lineHeight: 16,
-    textAlign: 'right',
-  },
-  searchButton: {
-    minHeight: 47,
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    alignSelf: 'stretch',
-    marginTop: 17,
-    borderRadius: 13,
-    backgroundColor: colors.primary,
-  },
-  searchButtonText: {
-    color: colors.surface,
-    fontFamily: 'Cairo_700Bold',
-    fontSize: 12,
-  },
-  searchButtonIcon: {
-    color: colors.surface,
-    fontSize: 16,
-  },
-  buttonPressed: {
-    opacity: 0.78,
-  },
+  tabs: { flexDirection: 'row-reverse', marginHorizontal: 16, marginVertical: 16, backgroundColor: '#ECF0EE', borderRadius: 18, padding: 4, gap: 4 },
+  tab: { flex: 1, height: 42, borderRadius: 14, justifyContent: 'center' },
+  tabActive: { backgroundColor: colors.surface, ...shadow, shadowOpacity: 0.06 },
+  card: { backgroundColor: colors.surface, borderRadius: 24, borderWidth: 1, borderColor: colors.line, padding: 16, gap: 10 },
+  row: { flexDirection: 'row-reverse', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
+  rowBetween: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  details: { gap: 6, backgroundColor: colors.canvas, borderRadius: 14, padding: 12 },
+  footer: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', borderTopWidth: 1, borderTopColor: colors.line, paddingTop: 12, marginTop: 2 },
+  backdrop: { flex: 1, backgroundColor: 'rgba(18,33,29,0.45)' },
+  sheet: { width: '100%', maxWidth: 390, alignSelf: 'center', backgroundColor: colors.surface, borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, gap: 12 },
+  handle: { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: colors.line, marginBottom: 8 },
+  summary: { backgroundColor: '#F4F6F5', borderRadius: 18, padding: 14, gap: 10 },
+  warn: { backgroundColor: '#FFF1D6', borderRadius: 16, padding: 14 },
 });
