@@ -1,0 +1,752 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>رحلتي · دراسة حالة نظام حجز البولمانات</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* Colors and type come from the Figma file "تطبيق حجز الباصات" (Brand/* and Status/* styles, Cairo) */
+:root{
+  --primary:#0F6E56; --primary-dark:#0B5D4B; --deep:#064A3B; --tint:#E1F5EE; --accent:#F5A524; --accent-soft:#FFF1D6;
+  --ink:#12211D; --muted:#5B6B67; --line:#E3E6E4; --bg:#F6F8F7; --surface:#FFFFFF; --sunk:#EEF2F0;
+  --ok-bg:#DDF3E8; --ok:#0B5D3B; --wait-bg:#FFF1D6; --wait:#8A5A00; --bad-bg:#FCE4E4; --bad:#B03A3A;
+  --reg-bg:#E8EEF7; --reg:#2C4A7A; --first-bg:#FFF1D6; --first:#8A5A00; --biz-bg:#EDE7FA; --biz:#4A3A8A;
+  --seat-av:#9CCFBF; --seat-bk:#E9EDEB; --bus-line:#D5DDDA;
+  --body:"Cairo",system-ui,"Segoe UI",sans-serif; --mono:"IBM Plex Mono",Consolas,monospace;
+  --shadow:0 18px 50px -28px rgba(6,74,59,.45);
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --primary:#3FB893; --primary-dark:#2E9C7B; --deep:#0B2A23; --tint:#143B31; --accent:#F7B547; --accent-soft:#3A2E15;
+  --ink:#E6EFEC; --muted:#9DB0AA; --line:#24372F; --bg:#0D1714; --surface:#13211C; --sunk:#0F1C18;
+  --ok-bg:#16382B; --ok:#7FD7AE; --wait-bg:#3A2E15; --wait:#F2C46D; --bad-bg:#3B1E1E; --bad:#F09A9A;
+  --reg-bg:#1C2A40; --reg:#A9C1EA; --first-bg:#3A2E15; --first:#F2C46D; --biz-bg:#2A2342; --biz:#C3B4F2;
+  --seat-av:#2E7F68; --seat-bk:#22312C; --bus-line:#2C4038; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --primary:#3FB893; --primary-dark:#2E9C7B; --deep:#0B2A23; --tint:#143B31; --accent:#F7B547; --accent-soft:#3A2E15;
+  --ink:#E6EFEC; --muted:#9DB0AA; --line:#24372F; --bg:#0D1714; --surface:#13211C; --sunk:#0F1C18;
+  --ok-bg:#16382B; --ok:#7FD7AE; --wait-bg:#3A2E15; --wait:#F2C46D; --bad-bg:#3B1E1E; --bad:#F09A9A;
+  --reg-bg:#1C2A40; --reg:#A9C1EA; --first-bg:#3A2E15; --first:#F2C46D; --biz-bg:#2A2342; --biz:#C3B4F2;
+  --seat-av:#2E7F68; --seat-bk:#22312C; --bus-line:#2C4038; color-scheme:dark}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.8}
+.wrap{max-width:1120px;margin:0 auto;padding:0 20px 96px;display:flex;flex-direction:column;gap:72px}
+h1,h2,h3{margin:0;line-height:1.35;text-wrap:balance}
+h2{font-size:1.9rem;font-weight:800}
+h3{font-size:1.15rem;font-weight:700}
+p{margin:0}
+.prose{max-width:72ch;color:var(--muted)}
+.eyebrow{font-size:.85rem;font-weight:700;color:var(--primary);letter-spacing:.02em}
+section{display:flex;flex-direction:column;gap:20px;scroll-margin-top:80px}
+code,.mono{font-family:var(--mono);direction:ltr;unicode-bidi:isolate}
+code{font-size:.85em;background:var(--sunk);padding:1px 7px;border-radius:5px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:22px}
+
+/* top nav */
+.topnav{position:sticky;top:0;z-index:10;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.topnav .in{max-width:1120px;margin:0 auto;padding:10px 20px;display:flex;align-items:center;gap:18px}
+.topnav .brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:1.15rem;color:var(--ink);text-decoration:none}
+.topnav .brand svg{width:32px;height:32px}
+.topnav nav{display:flex;gap:4px;overflow-x:auto;flex:1;scrollbar-width:none}
+.topnav nav a{color:var(--muted);text-decoration:none;font-size:.88rem;font-weight:600;padding:4px 10px;border-radius:20px;white-space:nowrap}
+.topnav nav a:hover{background:var(--tint);color:var(--primary)}
+.theme{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:20px;padding:4px 12px;font:600 .82rem var(--body);cursor:pointer}
+
+/* hero */
+.hero{margin-top:40px;border-radius:24px;background:linear-gradient(135deg,var(--deep),var(--primary));color:#fff;padding:48px;display:grid;grid-template-columns:1.2fr 1fr;gap:32px;align-items:center;overflow:hidden;position:relative}
+.hero::after{content:"";position:absolute;inset-inline-end:-120px;top:-120px;width:420px;height:420px;border-radius:50%;background:rgba(255,255,255,.06)}
+.hero .tag{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.12);border-radius:20px;padding:4px 14px;font-size:.85rem;font-weight:600;align-self:flex-start}
+.hero h1{font-size:clamp(2.4rem,5vw,3.6rem);font-weight:800}
+.hero h1 small{display:block;font-size:.42em;font-weight:500;opacity:.85;margin-top:8px;line-height:1.7}
+.hero .left{display:flex;flex-direction:column;gap:18px;position:relative;z-index:1}
+.hero .stats{display:flex;gap:28px;flex-wrap:wrap;margin-top:6px}
+.hero .stats b{display:block;font-size:2rem;font-weight:800;line-height:1.1}
+.hero .stats span{font-size:.85rem;opacity:.8}
+.team-line{display:flex;flex-wrap:wrap;align-items:center;gap:8px;border-top:1px solid rgba(255,255,255,.18);padding-top:16px;margin-top:4px}
+.team-line span{font-size:.85rem;opacity:.75;margin-inline-end:4px}
+.team-line b{background:rgba(255,255,255,.12);border-radius:20px;padding:3px 14px;font-weight:600;font-size:.95rem}
+.hero .phones{position:relative;z-index:1;display:flex;justify-content:center;gap:14px}
+.hero .phones img{width:46%;max-width:210px;border-radius:26px;box-shadow:0 30px 60px -20px rgba(0,0,0,.5);border:6px solid #0b3f33}
+.hero .phones img:last-child{margin-top:48px}
+
+.brief{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:-40px}
+.brief .card{display:flex;flex-direction:column;gap:6px;box-shadow:var(--shadow)}
+.brief .role{display:flex;align-items:center;gap:10px}
+.brief .ic{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:var(--tint);color:var(--primary)}
+.brief b{font-size:1.1rem}
+.brief small{color:var(--muted);font-size:.9rem;line-height:1.7}
+
+/* problem / solution */
+.ps{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.ps .card h3{display:flex;align-items:center;gap:8px}
+.ps ul{margin:0;padding-inline-start:20px;color:var(--muted)}
+.ps .sol{border-color:var(--primary);background:linear-gradient(180deg,var(--tint),var(--surface) 60%)}
+
+/* identity */
+.brand{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.lockup{display:flex;align-items:center;gap:14px;border-radius:14px;padding:18px 20px;border:1px solid var(--line);background:var(--surface)}
+.lockup svg{width:58px;height:58px;flex:none}
+.lockup .n{font-size:2rem;font-weight:800;line-height:1.4}
+.lockup .s{font-size:.85rem;color:var(--muted)}
+.lockup.inv{background:var(--deep);border-color:var(--deep);color:#fff}
+.lockup.inv .s{color:#ffffffb3}
+.swatches{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+.sw{display:flex;flex-direction:column;gap:4px;font-size:.78rem;color:var(--muted)}
+.sw i{display:block;height:52px;border-radius:10px;border:1px solid var(--line)}
+.sw b{color:var(--ink);font-size:.82rem}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:inline-flex;align-items:center;height:28px;padding:0 12px;border-radius:20px;font-size:.82rem;font-weight:700}
+.typescale{display:flex;flex-direction:column;gap:6px}
+.typescale div{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px dashed var(--line);padding-bottom:6px}
+.typescale small{color:var(--muted);font-family:var(--mono);font-size:.75rem;direction:ltr}
+
+/* tables */
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:680px;font-size:.93rem}
+th,td{padding:11px 16px;text-align:right;border-bottom:1px solid var(--line);vertical-align:top}
+th{background:var(--sunk);font-weight:700;font-size:.86rem;color:var(--muted)}
+tr:last-child td{border-bottom:0}
+.y{color:var(--ok);font-weight:700}.n{color:var(--muted)}.p{color:var(--wait);font-weight:700}
+
+/* buses */
+.buses{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;align-items:start}
+.bus-card{display:flex;flex-direction:column;align-items:center;gap:12px}
+.bus-card .meta{display:flex;justify-content:space-between;align-items:center;width:100%}
+.bus{direction:ltr;display:inline-flex;flex-direction:column;gap:6px;padding:14px;border:2px solid var(--bus-line);border-radius:26px 26px 12px 12px;background:var(--bg)}
+.bus-row{display:flex;gap:6px}
+.seat{width:26px;height:26px;border-radius:8px 8px 5px 5px;border:1.5px solid var(--seat-av);background:var(--surface);color:var(--primary);font:600 10px var(--mono);display:grid;place-items:center}
+.seat.bk{background:var(--seat-bk);border-color:var(--seat-bk);color:var(--muted)}
+.seat.sel{background:var(--primary);border-color:var(--primary);color:#fff}
+.seat.drv{border-color:var(--bus-line);color:var(--muted)}
+.aisle{width:18px}
+.bus-front{display:flex;justify-content:space-between;align-items:center;padding-bottom:6px;border-bottom:1px dashed var(--bus-line);font-size:10px;color:var(--muted);direction:rtl}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.85rem;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend .seat{width:16px;height:16px}
+.formula{background:var(--deep);color:#d9f2e9;border-radius:14px;padding:18px 22px;font-family:var(--mono);font-size:.88rem;direction:ltr;text-align:left;line-height:1.9;overflow-x:auto;white-space:pre;margin:0}
+.formula b{color:var(--accent);font-weight:600}
+
+/* ERD (SVG) */
+.erd-wrap{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;overflow-x:auto}
+.erd-wrap svg{display:block;width:100%;min-width:920px;height:auto;direction:ltr}
+.erd-box{fill:var(--surface);stroke:var(--line);stroke-width:1.2}
+.erd-head{fill:var(--primary)}.erd-head.core{fill:var(--deep)}
+.erd-title{fill:#fff;font:600 14px var(--mono)}
+.erd-sub{fill:#ffffffcc;font:600 12px var(--body)}
+.erd-field{fill:var(--ink);font:500 12.5px var(--mono)}
+.erd-type{fill:var(--muted);font:400 11.5px var(--mono)}
+.erd-sep{stroke:var(--line);stroke-width:1}
+.erd-fkrow{fill:var(--tint);opacity:.6}
+.erd-k{font:700 10px var(--mono)}.erd-k.pk{fill:var(--wait)}.erd-k.fk{fill:var(--primary)}
+.erd-rel{fill:none;stroke:var(--primary);stroke-width:1.6;stroke-linejoin:round}
+.erd-mark{fill:none;stroke:var(--primary);stroke-width:1.6}
+.erd-key{display:flex;gap:20px;flex-wrap:wrap;font-size:.85rem;color:var(--muted)}
+.erd-key span{display:inline-flex;align-items:center;gap:6px}
+.erd-key .k{font-family:var(--mono);font-size:.7rem;font-weight:700;border-radius:4px;padding:0 6px}
+.erd-key .k.pk{background:var(--accent-soft);color:var(--wait)}.erd-key .k.fk{background:var(--tint);color:var(--primary)}
+.key-line{fill:none;stroke:var(--primary);stroke-width:1.6}
+.rels{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:10px;margin:0;padding:0;list-style:none}
+.rels li{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 16px;display:flex;flex-direction:column;gap:2px}
+.rels li b{font-family:var(--mono);direction:ltr;text-align:right}
+.rels small{color:var(--muted);line-height:1.7}
+.why{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.why div{border-top:3px solid var(--primary);padding-top:12px;display:flex;flex-direction:column;gap:4px}
+.why div.hl{border-top-color:var(--accent)}
+.why small{color:var(--muted);line-height:1.75}
+
+/* flows */
+.flow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.state{padding:8px 16px;border-radius:12px;font-weight:700;font-size:.92rem;display:flex;flex-direction:column;line-height:1.4}
+.state code{background:transparent;padding:0;font-size:.72rem;opacity:.8}
+.arrow{color:var(--muted);font-size:1.4rem}
+.flow-note{font-size:.85rem;color:var(--muted)}
+.lifecycles{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.lifecycles .card{display:flex;flex-direction:column;gap:16px}
+
+.steps{counter-reset:s;display:grid;grid-template-columns:repeat(5,1fr);gap:14px}
+.step{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px 18px 16px;display:flex;flex-direction:column;gap:6px}
+.step::before{counter-increment:s;content:counter(s);position:absolute;top:-14px;inset-inline-start:16px;width:28px;height:28px;border-radius:50%;background:var(--primary);color:#fff;display:grid;place-items:center;font-weight:800;font-size:.85rem}
+.step .who{font-size:.75rem;font-weight:700;color:var(--primary)}
+.step small{color:var(--muted);line-height:1.7}
+
+.codeblk{background:var(--deep);color:#d9f2e9;border-radius:14px;padding:18px 22px;font-family:var(--mono);font-size:.84rem;line-height:1.75;direction:ltr;text-align:left;overflow-x:auto;margin:0;white-space:pre}
+.codeblk .c{color:#7fb8a5}.codeblk .k{color:var(--accent)}.codeblk .s{color:#9fe0c7}
+.two{display:grid;grid-template-columns:1.1fr 1fr;gap:16px;align-items:start}
+.points{display:flex;flex-direction:column;gap:10px;margin:0;padding:0;list-style:none}
+.points li{display:flex;gap:10px;align-items:flex-start}
+.points li::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--primary);margin-top:11px;flex:none}
+.points small{display:block;color:var(--muted);line-height:1.7}
+
+.pay{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.pay .card{display:flex;flex-direction:column;gap:12px}
+.pay .card .top{display:flex;align-items:center;justify-content:space-between}
+
+/* screens */
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tabs button{font:600 .9rem var(--body);border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:6px 16px;border-radius:20px;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--primary);color:#fff;border-color:var(--primary)}
+.phones-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:22px}
+.cancel-shot{margin:0;display:flex;flex-direction:column;gap:8px;align-items:center}
+.cancel-shot img{width:240px;border-radius:24px;border:6px solid var(--ink);box-shadow:var(--shadow);display:block}
+.phones-grid figure{margin:0;display:flex;flex-direction:column;gap:8px}
+.phones-grid img{width:100%;border-radius:24px;border:6px solid var(--ink);box-shadow:var(--shadow);background:var(--surface);display:block}
+figcaption{font-size:.88rem;color:var(--muted);line-height:1.6}
+figcaption b{color:var(--ink);display:block}
+.web-tabs{display:flex;gap:6px;flex-wrap:wrap}
+.web-tabs button{font:600 .82rem var(--body);border:1px solid var(--line);background:var(--surface);color:var(--muted);padding:5px 12px;border-radius:8px;cursor:pointer}
+.web-tabs button[aria-selected="true"]{color:var(--primary);border-color:var(--primary);background:var(--tint)}
+.browser{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--surface);box-shadow:var(--shadow)}
+.chrome{display:flex;align-items:center;gap:8px;padding:9px 14px;background:var(--sunk);border-bottom:1px solid var(--line);direction:ltr}
+.chrome i{width:10px;height:10px;border-radius:50%;background:var(--line)}
+.chrome .url{flex:1;margin-inline:12px;background:var(--surface);border-radius:6px;padding:3px 12px;font-family:var(--mono);font-size:.75rem;color:var(--muted)}
+.browser img{display:block;width:100%}
+.web-cap{font-size:.92rem;color:var(--muted)}
+[hidden]{display:none!important}
+
+/* api */
+.api{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.api .card{padding:16px 18px;display:flex;flex-direction:column;gap:6px}
+.api .card h3{font-size:1rem;display:flex;justify-content:space-between;align-items:center}
+.ep{display:flex;gap:8px;font-family:var(--mono);font-size:.76rem;direction:ltr;text-align:left;padding:4px 0;border-bottom:1px dotted var(--line)}
+.ep:last-child{border-bottom:0}
+.ep .m{width:50px;font-weight:600;flex:none}
+.get{color:var(--ok)}.post{color:var(--primary)}.patch{color:var(--wait)}.del{color:var(--bad)}.crud{color:var(--biz)}
+
+/* plan + team */
+.phases{display:flex;flex-direction:column;border-inline-start:2px solid var(--line);margin-inline-start:10px}
+.phase{position:relative;padding:0 26px 22px}
+.phase::before{content:"";position:absolute;inset-inline-start:-8px;top:9px;width:14px;height:14px;border-radius:50%;background:var(--primary);border:3px solid var(--bg)}
+.phase.done::before{background:var(--accent)}
+.phase small{display:block;color:var(--muted)}
+.team{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.member{display:flex;flex-direction:column;gap:12px}
+.member .who{display:flex;align-items:center;gap:10px}
+.member .av{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-weight:800;color:#fff;background:var(--primary);flex:none;font-size:1.05rem}
+.member:nth-child(2) .av{background:var(--accent);color:#3b2600}.member:nth-child(3) .av{background:var(--deep)}.member:nth-child(4) .av{background:#4A3A8A}
+.member .tag{font-size:.75rem;font-weight:700;background:var(--tint);color:var(--primary);border-radius:20px;padding:2px 10px;align-self:flex-start}
+.member ul{margin:0;padding-inline-start:18px;font-size:.9rem;color:var(--muted);line-height:1.8}
+.shared{background:var(--accent-soft);border-radius:14px;padding:16px 20px;font-size:.93rem}
+
+.scope{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.scope ul{margin:0;padding-inline-start:20px;color:var(--muted);line-height:1.9}
+.qs{counter-reset:q;display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0;padding:0;list-style:none}
+.qs li{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 16px;display:flex;gap:10px}
+.qs li::before{counter-increment:q;content:counter(q);color:var(--primary);font-weight:800}
+.qs small{color:var(--muted);display:block}
+
+footer{border-top:1px solid var(--line);padding-top:24px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;color:var(--muted);font-size:.88rem}
+
+@media screen and (max-width:900px){
+  .hero{grid-template-columns:1fr;padding:32px}
+  .brief,.ps,.brand,.buses,.lifecycles,.two,.pay,.api,.team,.scope,.qs,.rels,.why,.steps{grid-template-columns:1fr}
+  .erd{grid-template-columns:1fr 1fr}
+  .phones-grid{grid-template-columns:repeat(2,1fr)}
+  .swatches{grid-template-columns:repeat(3,1fr)}
+}
+.print-only,.print-web{display:none}
+@media print{
+  @page{size:1280px 1810px;margin:40px 0}
+  html,body{-webkit-print-color-adjust:exact;print-color-adjust:exact;background:var(--bg)}
+  .topnav,.theme,.tabs,.web-tabs,#tab-web>.browser,#webCap{display:none!important}
+  .wrap{gap:48px;padding-bottom:0}
+  .hero{margin-top:0}
+  [hidden]{display:block!important}
+  .print-only{display:block}
+  .print-web{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .print-web figure{margin:0;display:flex;flex-direction:column;gap:6px}
+  .card,.browser,figure,.step,.ent,.member,.phase,.rels li,.qs li,.why div,.lifecycles,.pay,.codeblk,.formula,.tbl,.brief,.ps,.brand,.shared{break-inside:avoid}
+  h2,h3,.eyebrow{break-after:avoid}
+  *{box-shadow:none!important}
+  footer{display:none}
+  .brief{margin-top:16px}
+}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <!-- Logo mark exported from the Figma file (Logo mark, 50×50) -->
+    <symbol id="mark" viewBox="0 0 50 50">
+      <rect width="50" height="50" rx="16" fill="#0F6E56"/>
+      <g fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20.67 30.42a2.17 2.17 0 1 1-4.34 0 2.17 2.17 0 0 1 4.34 0Z"/>
+        <path d="M33.67 30.42a2.17 2.17 0 1 1-4.34 0 2.17 2.17 0 0 1 4.34 0Z"/>
+        <path d="M16.33 30.42h-2.16V18.5a1.08 1.08 0 0 1 1.08-1.08h15.17c1.43 0 2.81.8 3.83 2.22A9.6 9.6 0 0 1 35.83 25v5.42h-2.16m-4.34 0h-8.66"/>
+        <path d="M29.33 17.42 30.96 25h4.87M14.17 22.83h5.41m0 0H25m-5.42 0v-5.41M25 22.83h5.42M25 22.83v-5.41"/>
+      </g>
+    </symbol>
+    <symbol id="i-user" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a7 7 0 0 1 16 0v1"/></g></symbol>
+    <symbol id="i-desk" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></g></symbol>
+    <symbol id="i-phone" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M11 18h2"/></g></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6M9 9l6 6"/></g></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m8 12 3 3 5-6"/></g></symbol>
+  </defs>
+</svg>
+
+<header class="topnav">
+  <div class="in">
+    <a class="brand" href="#top"><svg><use href="#mark"/></svg>رحلتي</a>
+    <nav aria-label="أقسام الدراسة">
+      <a href="#problem">المشكلة</a><a href="#brand">الهوية</a><a href="#roles">الأدوار</a><a href="#buses">البولمانات</a>
+      <a href="#data">البيانات</a><a href="#booking">الحجز</a><a href="#screens">الشاشات</a><a href="#api">الـ API</a>
+      <a href="#plan">الخطة</a>
+    </nav>
+    <button class="theme" id="themeBtn" type="button">الوضع الليلي</button>
+  </div>
+</header>
+
+<div class="wrap" id="top">
+
+<section class="hero" aria-label="رحلتي">
+  <div class="left">
+    <span class="tag"><svg width="18" height="18"><use href="#mark"/></svg> دراسة حالة · نظام حجز رحلات بين المحافظات</span>
+    <h1>رحلتي<small>نظام كامل لشركة نقل سورية: الإدارة تنشئ الرحلات والجداول، موظف الاستقبال يحجز من الكراج، والزبون يختار مقعده من شكل البولمان على موبايله ويدفع بشام كاش.</small></h1>
+    <div class="stats">
+      <div><b>14</b><span>محافظة سورية</span></div>
+      <div><b>6</b><span>أنواع بولمان</span></div>
+      <div><b>3</b><span>أدوار</span></div>
+      <div><b>5</b><span>Collections فقط</span></div>
+    </div>
+    <div class="team-line"><span>فريق العمل</span><b>حسن ديوب</b><b>عبدالرحمن أسعد</b><b>عدنان الصوص</b><b>حيدرة محفوض</b></div>
+  </div>
+  <div class="phones">
+    <img src="screens/m5-seat-map.png" alt="شاشة اختيار المقعد في تطبيق الزبون">
+    <img src="screens/m1-welcome.png" alt="شاشة الترحيب في تطبيق الزبون">
+  </div>
+</section>
+
+<div class="brief" aria-label="الأدوار باختصار">
+  <div class="card"><div class="role"><span class="ic"><svg width="22" height="22"><use href="#i-desk"/></svg></span><b>الإدارة · Admin</b></div><small>الباصات، الرحلات والجداول المجدولة، حسابات الاستقبال، والتقارير.</small></div>
+  <div class="card"><div class="role"><span class="ic"><svg width="22" height="22"><use href="#i-user"/></svg></span><b>الاستقبال · Receptionist</b></div><small>حجز سريع للزبون من الكراج، استلام الدفع، الإلغاء، وقائمة ركاب الرحلة.</small></div>
+  <div class="card"><div class="role"><span class="ic"><svg width="22" height="22"><use href="#i-phone"/></svg></span><b>الزبون · Customer</b></div><small>يبحث عن رحلة، يختار مقعده من المخطط، يدفع بشام كاش، ويتابع حجوزاته.</small></div>
+</div>
+
+<!-- PROBLEM -->
+<section id="problem">
+  <span class="eyebrow">المشكلة والحل</span>
+  <h2>من الطابور على شباك الكراج إلى المقعد على الموبايل</h2>
+  <div class="ps">
+    <div class="card">
+      <h3><svg width="22" height="22" style="color:var(--bad)"><use href="#i-x"/></svg>اليوم</h3>
+      <ul>
+        <li>المسافر لا يعرف مواعيد الرحلات ولا أسعارها إلا إذا ذهب للكراج أو اتصل.</li>
+        <li>الحجز يدوي على الورق، ويحدث أن يُباع المقعد نفسه مرتين.</li>
+        <li>الإدارة تكتب نفس الرحلة كل يوم من جديد، ولا ترى الإشغال أو الإيراد بسهولة.</li>
+      </ul>
+    </div>
+    <div class="card sol">
+      <h3><svg width="22" height="22" style="color:var(--primary)"><use href="#i-check"/></svg>مع رحلتي</h3>
+      <ul>
+        <li>تطبيق يعرض الرحلات والمقاعد الفاضية لحظياً، ويحجز المقعد الذي يختاره الزبون.</li>
+        <li>حجز ذرّي على مستوى قاعدة البيانات: المقعد لا يُحجز مرتين مهما ضغط الناس معاً.</li>
+        <li>جداول مجدولة تولّد الرحلات تلقائياً، ولوحة تعرض الإشغال والإيرادات.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- BRAND -->
+<section id="brand">
+  <span class="eyebrow">الهوية البصرية · من ملف Figma</span>
+  <h2>الاسم، الشعار، والألوان</h2>
+  <p class="prose">«رحلتي» اسم قريب من المسافر: الرحلة رحلته هو. الشعار بولمان بخط أبيض داخل مربع أخضر بزوايا ناعمة. الأخضر الداكن يعطي ثقة شركة نقل، والعنبري يُستعمل باعتدال لما يحتاج إلى انتباه: الدرجة الأولى والزر الرئيسي في شاشة الترحيب.</p>
+  <div class="brand">
+    <div class="card" style="display:flex;flex-direction:column;gap:14px">
+      <div class="lockup"><svg><use href="#mark"/></svg><div><div class="n">رحلتي</div><div class="s">احجز مقعدك بين المحافظات</div></div></div>
+      <div class="lockup inv"><svg><use href="#mark"/></svg><div><div class="n">رحلتي</div><div class="s">كل رحلات شركتك في مكان واحد</div></div></div>
+      <div class="swatches">
+        <div class="sw"><i style="background:#0F6E56"></i><b>Primary</b><span class="mono">#0F6E56</span></div>
+        <div class="sw"><i style="background:#064A3B"></i><b>Deep</b><span class="mono">#064A3B</span></div>
+        <div class="sw"><i style="background:#E1F5EE"></i><b>Tint</b><span class="mono">#E1F5EE</span></div>
+        <div class="sw"><i style="background:#F5A524"></i><b>Accent</b><span class="mono">#F5A524</span></div>
+        <div class="sw"><i style="background:#12211D"></i><b>Ink</b><span class="mono">#12211D</span></div>
+      </div>
+    </div>
+    <div class="card" style="display:flex;flex-direction:column;gap:16px">
+      <h3>الخط: Cairo</h3>
+      <div class="typescale">
+        <div><span style="font-size:30px;font-weight:700">Display</span><small>Bold 30</small></div>
+        <div><span style="font-size:26px;font-weight:700">عنوان أول</span><small>Bold 26</small></div>
+        <div><span style="font-size:20px;font-weight:700">عنوان ثاني</span><small>Bold 20</small></div>
+        <div><span style="font-size:15px">نص عادي للفقرات والحقول</span><small>Regular 15</small></div>
+        <div><span style="font-size:12px;color:var(--muted)">تعليق صغير</span><small>Regular 12</small></div>
+      </div>
+      <h3>ألوان الحالات والدرجات</h3>
+      <div class="chips">
+        <span class="chip" style="background:var(--ok-bg);color:var(--ok)">مؤكد</span>
+        <span class="chip" style="background:var(--bad-bg);color:var(--bad)">ملغى</span>
+        <span class="chip" style="background:var(--reg-bg);color:var(--reg)">عادية</span>
+        <span class="chip" style="background:var(--first-bg);color:var(--first)">درجة أولى</span>
+        <span class="chip" style="background:var(--biz-bg);color:var(--biz)">رجال أعمال</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ROLES -->
+<section id="roles">
+  <span class="eyebrow">الأدوار</span>
+  <h2>المستخدمون والصلاحيات</h2>
+  <p class="prose">الدور حقل واحد <code>role</code> على مستند المستخدم: <code>ADMIN</code> أو <code>RECEPTIONIST</code> أو <code>CUSTOMER</code>. كل Route بالباك محمي بـ Middleware بسيط مثل <code>authorize('ADMIN', 'RECEPTIONIST')</code>، والواجهة تخفي فقط ما لا يحق للدور.</p>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>العملية</th><th>Admin</th><th>Receptionist</th><th>Customer</th></tr></thead>
+      <tbody>
+        <tr><td>إدارة الباصات (الدرجة والحجم والحالة)</td><td class="y">كامل</td><td class="n">لا</td><td class="n">لا</td></tr>
+        <tr><td>إنشاء وتعديل وإلغاء رحلة</td><td class="y">كامل</td><td class="n">لا</td><td class="n">لا</td></tr>
+        <tr><td>الرحلات المجدولة</td><td class="y">كامل</td><td class="n">لا</td><td class="n">لا</td></tr>
+        <tr><td>حسابات موظفي الاستقبال</td><td class="y">كامل</td><td class="n">لا</td><td class="n">لا</td></tr>
+        <tr><td>استعراض الرحلات ومخطط المقاعد</td><td class="y">نعم</td><td class="y">نعم</td><td class="y">نعم</td></tr>
+        <tr><td>حجز لزبون من المكتب</td><td class="y">نعم</td><td class="y">نعم</td><td class="n">لا</td></tr>
+        <tr><td>حجز من التطبيق</td><td class="n">لا</td><td class="n">لا</td><td class="y">لنفسه</td></tr>
+        <tr><td>استلام الدفع في المكتب (نقداً أو شام كاش)</td><td class="y">نعم</td><td class="y">نعم</td><td class="n">لا</td></tr>
+        <tr><td>إلغاء حجز</td><td class="y">أي حجز</td><td class="y">أي حجز</td><td class="p">حجوزاته، قبل مهلة الإلغاء</td></tr>
+        <tr><td>تسجيل استرداد المبلغ للحجز الملغى</td><td class="y">نعم</td><td class="y">نعم</td><td class="n">لا</td></tr>
+        <tr><td>قائمة ركاب الرحلة</td><td class="y">نعم</td><td class="y">نعم</td><td class="n">لا</td></tr>
+        <tr><td>لوحة التحكم والتقارير</td><td class="y">نعم</td><td class="n">لا</td><td class="n">لا</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- BUSES -->
+<section id="buses">
+  <span class="eyebrow">الأسطول</span>
+  <h2>6 أنواع بولمان، مخطط واحد يُولَّد بالكود</h2>
+  <p class="prose">ثلاث درجات بحجمين. بدل رسم كل مخطط يدوياً، دالة واحدة <code>buildSeatMap(class, size)</code> تبني المقاعد من ثلاث قيم، والموبايل والويب يرسمانها بالشكل نفسه. الترقيم من الأمام للخلف ومن اليسار لليمين.</p>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>الدرجة</th><th>التوزيع</th><th>كبير · 11 صف</th><th>متوسط · 9 صفوف</th><th>سعر المثال</th></tr></thead>
+      <tbody>
+        <tr><td><span class="chip" style="background:var(--reg-bg);color:var(--reg)">عادية</span></td><td>2+2، ومقعد بآخر الممر</td><td>45 مقعد</td><td>37 مقعد</td><td>85,000 ل.س</td></tr>
+        <tr><td><span class="chip" style="background:var(--first-bg);color:var(--first)">درجة أولى</span></td><td class="mono">2+1</td><td>33 مقعد</td><td>27 مقعد</td><td>120,000 ل.س</td></tr>
+        <tr><td><span class="chip" style="background:var(--biz-bg);color:var(--biz)">رجال أعمال</span></td><td class="mono">1+1</td><td>22 مقعد</td><td>18 مقعد</td><td>180,000 ل.س</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <pre class="formula">layout = { leftSeats, rightSeats, rows, hasBackMiddleSeat }
+<b>REGULAR</b>     → { 2, 2, rows, true  }
+<b>FIRST_CLASS</b> → { 2, 1, rows, false }
+<b>BUSINESS</b>    → { 1, 1, rows, false }
+rows: LARGE = 11, MEDIUM = 9</pre>
+  <div class="legend"><span><i class="seat"></i>متاح</span><span><i class="seat bk"></i>محجوز</span><span><i class="seat sel"></i>اختيار الزبون</span></div>
+  <div class="buses">
+    <div class="card bus-card"><div class="meta"><b>عادية · كبير</b><span class="chip" style="background:var(--reg-bg);color:var(--reg)">45</span></div><div class="bus" data-class="regular" data-size="large" data-booked="1,2,3,4,9,10,13,14,21,22,25,30,33,34,41,42,43" data-selected="19,20"></div></div>
+    <div class="card bus-card"><div class="meta"><b>درجة أولى · متوسط</b><span class="chip" style="background:var(--first-bg);color:var(--first)">27</span></div><div class="bus" data-class="first" data-size="medium" data-booked="1,3,7,8,12,15,16,22,25" data-selected="4,5"></div></div>
+    <div class="card bus-card"><div class="meta"><b>رجال أعمال · كبير</b><span class="chip" style="background:var(--biz-bg);color:var(--biz)">22</span></div><div class="bus" data-class="business" data-size="large" data-booked="1,2,5,9,10,17" data-selected="12"></div></div>
+  </div>
+</section>
+
+<!-- DATA -->
+<section id="data">
+  <span class="eyebrow">تصميم قاعدة البيانات · MongoDB</span>
+  <h2>مخطط البيانات: 5 Collections</h2>
+  <p class="prose">المحافظات وأنواع البولمانات ثوابت في الكود، فلا تحتاج إلى جداول. مقاعد الحجز مضمّنة داخل مستند الحجز، والمقاعد المحجوزة محفوظة على الرحلة نفسها في مصفوفة، وبذلك يتم الحجز بعملية واحدة لا تسمح بتكرار المقعد.</p>
+  <div class="erd-wrap"><svg id="erd" viewBox="0 0 1240 600" role="img" aria-label="مخطط العلاقات بين users و bookings و trips و buses و tripschedules"></svg></div>
+  <div class="erd-key">
+    <span><b class="k pk">PK</b> مفتاح أساسي</span>
+    <span><b class="k fk">FK</b> مفتاح أجنبي</span>
+    <span><svg width="34" height="14" viewBox="0 0 34 14"><path d="M2 7H32M6 2V12M10 2V12" class="key-line"/></svg> طرف واحد</span>
+    <span><svg width="34" height="14" viewBox="0 0 34 14"><path d="M2 7H32M22 7 32 1M22 7 32 13" class="key-line"/></svg> طرف متعدد</span>
+  </div>
+  <ul class="rels">
+    <li><b>buses → trips · 1:N</b><small>كل رحلة على باص محدد، ومن درجته وحجمه يُعرف مخطط المقاعد.</small></li>
+    <li><b>buses → tripschedules · 1:N</b><small>الجدول المجدول يحدد الباص الذي ستُولَّد عليه رحلاته.</small></li>
+    <li><b>tripschedules → trips · 1:N</b><small>الجدول يولّد الرحلات، والرحلة اليدوية يكون <code>scheduleId</code> فيها فارغاً.</small></li>
+    <li><b>trips → bookings · 1:N</b><small>الرحلة تحمل <code>bookedSeats</code>، والحجز يحمل تفاصيل الركاب.</small></li>
+    <li><b>users → bookings · 1:N</b><small>علاقتان: <code>customerId</code> للزبون، و<code>createdBy</code> لموظف الاستقبال عند الحجز من المكتب.</small></li>
+  </ul>
+  <div class="why">
+    <div><b>ثوابت بدل جداول</b><small>14 محافظة و6 أنواع لا تتغير، فهي قيم enum في الكود، وهذا يلغي شاشتي إدارة وجدولين.</small></div>
+    <div class="hl"><b>تثبيت السعر</b><small><code>seatPrice</code> يُنسخ إلى الحجز لحظة الحجز، فتعديل سعر الرحلة لاحقاً لا يغيّر حجزاً سابقاً.</small></div>
+    <div><b>مقاعد مضمّنة</b><small><code>seats: [{ seatNumber, passengerName }]</code> داخل الحجز بدل جدول منفصل، لأنها لا تُقرأ إلا معه.</small></div>
+  </div>
+</section>
+
+<!-- BOOKING -->
+<section id="booking">
+  <span class="eyebrow">قلب النظام</span>
+  <h2>الحجز والدفع</h2>
+
+  <h3>دورة الحياة</h3>
+  <div class="lifecycles">
+    <div class="card">
+      <b>الحجز · <code>booking.status</code></b>
+      <div class="flow">
+        <span class="state" style="background:var(--ok-bg);color:var(--ok)">مؤكد<code>CONFIRMED</code></span><span class="arrow">←</span>
+        <span class="state" style="background:var(--sunk);color:var(--muted)">مكتمل<code>COMPLETED</code></span>
+      </div>
+      <div class="flow"><span class="flow-note">قبل موعد الرحلة:</span><span class="state" style="background:var(--bad-bg);color:var(--bad)">ملغى<code>CANCELLED</code></span></div>
+      <small class="flow-note">الحجز يُنشأ مؤكداً مباشرة لأن الدفع يتم لحظة الحجز، ويصبح مكتملاً بعد وصول الرحلة.</small>
+    </div>
+    <div class="card">
+      <b>الرحلة · <code>trip.status</code></b>
+      <div class="flow">
+        <span class="state" style="background:var(--tint);color:var(--primary)">مجدولة<code>SCHEDULED</code></span><span class="arrow">←</span>
+        <span class="state" style="background:var(--reg-bg);color:var(--reg)">انطلقت<code>DEPARTED</code></span><span class="arrow">←</span>
+        <span class="state" style="background:var(--sunk);color:var(--muted)">وصلت<code>ARRIVED</code></span>
+      </div>
+      <div class="flow"><span class="flow-note">قبل الانطلاق:</span><span class="state" style="background:var(--bad-bg);color:var(--bad)">ملغاة<code>CANCELLED</code></span></div>
+      <small class="flow-note">لا يُغيَّر باص رحلة فيها حجوزات، ولا تتأثر الحجوزات بتعديل السعر.</small>
+    </div>
+  </div>
+
+  <h3>الرحلات المجدولة</h3>
+  <div class="two">
+    <ul class="points">
+      <li><div><b>قالب وقاعدة تكرار</b><small>الخط والباص والساعة والسعر، ثم تكرار يومي أو أسبوعي بأيام محددة أو شهري بيوم محدد، بين تاريخين.</small></div></li>
+      <li><div><b>مهمة يومية عبر node-cron</b><small>تُبقي رحلات 30 يوماً قادمة جاهزة دائماً، وتضيف كل يوم رحلات اليوم الجديد.</small></div></li>
+      <li><div><b>بلا تكرار</b><small>فهرس فريد على <code>scheduleId + departureAt</code>، فتشغيل المهمة مرتين لا يولّد الرحلة مرتين.</small></div></li>
+      <li><div><b>الرحلة المولّدة مستقلة</b><small>تعديلها لا يغيّر الجدول، وتعديل الجدول لا يمس الرحلات التي فيها حجوزات.</small></div></li>
+    </ul>
+    <figure style="margin:0"><div class="browser"><div class="chrome"><i></i><i></i><i></i><span class="url">rihlati.app/admin/schedules</span></div><img src="screens/w6b-schedules.png" alt="شاشة الجداول المجدولة في لوحة الإدارة"></div></figure>
+  </div>
+
+  <h3>الدفع</h3>
+  <div class="pay">
+    <div class="card">
+      <div class="top"><b>من التطبيق</b><span class="chip" style="background:var(--tint);color:var(--primary)">شام كاش فقط</span></div>
+      <small class="prose">يحوّل الزبون المبلغ إلى محفظة الشركة ويُدخل رقم عملية التحويل، فيُثبَّت الحجز مؤكداً مباشرة ويُحفظ رقم العملية معه للمراجعة. من يفضّل الدفع نقداً يحجز من المكتب، وبذلك يكون كل حجز من التطبيق مدفوعاً.</small>
+    </div>
+    <div class="card">
+      <div class="top"><b>من المكتب أو الكراج</b><span class="chip" style="background:var(--accent-soft);color:var(--wait)">نقداً أو شام كاش</span></div>
+      <small class="prose">يختار موظف الاستقبال الرحلة والمقاعد ويُدخل اسم الزبون ورقم هاتفه، ثم يستلم المبلغ ويثبّت الحجز. لا يوجد ربط برمجي مع شام كاش.</small>
+    </div>
+  </div>
+
+  <h3>الإلغاء والاسترداد</h3>
+  <div class="two">
+    <ul class="points">
+      <li><div><b>مهلة الإلغاء</b><small>يلغي الزبون حجزه القادم من «حجوزاتي» حتى ساعتين قبل موعد الرحلة، وبعدها يختفي زر الإلغاء. موظف الاستقبال يستطيع الإلغاء حتى الانطلاق.</small></div></li>
+      <li><div><b>المقاعد تعود فوراً</b><small>تُحذف المقاعد من <code>bookedSeats</code>، وتصبح حالة الحجز <code>CANCELLED</code> ويُسجَّل وقت الإلغاء في <code>cancelledAt</code>.</small></div></li>
+      <li><div><b>استرداد يدوي</b><small>لا يوجد ربط برمجي مع شام كاش، فيحوّل موظف الاستقبال المبلغ إلى محفظة الزبون (أو يردّه نقداً لحجز المكتب)، ثم يعلّم الحجز <code>refunded</code>.</small></div></li>
+      <li><div><b>قيم قابلة للتعديل</b><small>المهلة ونسبة الاسترداد ثابتان في الكود (<code>CANCEL_DEADLINE_HOURS = 2</code>، <code>REFUND_PERCENT = 100</code>) إلى أن يحددهما صاحب الشركة.</small></div></li>
+    </ul>
+    <figure class="cancel-shot"><img src="screens/m9-cancel.png" alt="نافذة تأكيد إلغاء الحجز في تطبيق الزبون"><figcaption><b>تأكيد الإلغاء</b>ملخص الحجز والمبلغ المسترد قبل التأكيد.</figcaption></figure>
+  </div>
+
+  <h3>مسار الحجز من البداية إلى النهاية</h3>
+  <div class="steps">
+    <div class="step"><span class="who">الزبون · التطبيق</span><b>يبحث ويختار</b><small><code>GET /trips?from&amp;to&amp;date</code> ثم صفحة الرحلة مع المخطط والمقاعد المحجوزة.</small></div>
+    <div class="step"><span class="who">الزبون · التطبيق</span><b>يُدخل الركاب ويدفع</b><small>اسم لكل مقعد، ثم تحويل شام كاش ورقم العملية.</small></div>
+    <div class="step"><span class="who">الخادم</span><b>يثبّت الحجز</b><small>تحديث واحد على الرحلة يمنع تكرار المقعد، ثم حجز مؤكد برمز مثل <code>BK-7F3K9Q</code>.</small></div>
+    <div class="step"><span class="who">الزبون</span><b>يرى حجزه</b><small>في «حجوزاتي» مع رمز الحجز وأرقام المقاعد.</small></div>
+    <div class="step"><span class="who">الاستقبال · الكراج</span><b>يوم الرحلة</b><small>قائمة الركاب حسب رقم المقعد، ويعرض الزبون رمز الحجز عند الصعود.</small></div>
+  </div>
+</section>
+
+<!-- SCREENS -->
+<section id="screens">
+  <span class="eyebrow">التصميم · من ملف Figma</span>
+  <h2>الشاشات، كما صُمّمت</h2>
+  <p class="prose">17 شاشة مصدّرة مباشرة من Figma: 9 لتطبيق الزبون و8 للوحة الإدارة والاستقبال. الواجهة عربية من اليمين لليسار بخط Cairo.</p>
+  <div class="tabs" role="tablist">
+    <button role="tab" aria-selected="true" data-tab="mobile">تطبيق الزبون · React Native</button>
+    <button role="tab" aria-selected="false" data-tab="web">لوحة الإدارة والاستقبال · Next.js</button>
+  </div>
+
+  <h3 class="print-only">تطبيق الزبون · React Native</h3>
+  <div id="tab-mobile" class="phones-grid">
+    <figure><img src="screens/m1-welcome.png" alt=""><figcaption><b>1 · الترحيب</b>صورة الطريق وبطاقة رحلة حيّة.</figcaption></figure>
+    <figure><img src="screens/m2-login.png" alt=""><figcaption><b>2 · الدخول</b>رقم سوري مع +963 وكلمة مرور.</figcaption></figure>
+    <figure><img src="screens/m3-home.png" alt=""><figcaption><b>3 · البحث</b>من، إلى، والتاريخ، مع وجهات شائعة.</figcaption></figure>
+    <figure><img src="screens/m4-results.png" alt=""><figcaption><b>4 · النتائج</b>شريط أيام، فلترة بالدرجة، والسعر.</figcaption></figure>
+    <figure><img src="screens/m5-seat-map.png" alt=""><figcaption><b>5 · اختيار المقعد</b>درجة أولى 2+1 · 27 مقعداً.</figcaption></figure>
+    <figure><img src="screens/m6-summary-payment.png" alt=""><figcaption><b>6 · الركاب والدفع</b>اسم لكل مقعد، ثم شام كاش.</figcaption></figure>
+    <figure><img src="screens/m7-success.png" alt=""><figcaption><b>7 · تم الحجز</b>رمز الحجز والمقاعد وطريقة الدفع.</figcaption></figure>
+    <figure><img src="screens/m8-my-bookings.png" alt=""><figcaption><b>8 · حجوزاتي</b>القادمة والسابقة، مع زر الإلغاء.</figcaption></figure>
+    <figure><img src="screens/m9-cancel.png" alt=""><figcaption><b>9 · إلغاء الحجز</b>تأكيد الإلغاء والمبلغ المسترد.</figcaption></figure>
+  </div>
+
+  <div id="tab-web" hidden>
+    <h3 class="print-only" style="margin-top:28px">لوحة الإدارة والاستقبال · Next.js</h3>
+    <div class="print-web" id="printWeb"></div>
+    <div class="web-tabs" role="tablist" id="webTabs"></div>
+    <div class="browser" style="margin-top:12px"><div class="chrome"><i></i><i></i><i></i><span class="url" id="webUrl"></span></div><img id="webImg" alt=""></div>
+    <p class="web-cap" id="webCap" style="margin-top:10px"></p>
+  </div>
+</section>
+
+<!-- API -->
+<section id="api">
+  <span class="eyebrow">Express · REST</span>
+  <h2>الـ Endpoints حسب الدور</h2>
+  <p class="prose">كل المسارات تبدأ بـ <code>/api</code>. JSON داخل وخارج، والأخطاء بالشكل <code>{ message, code }</code>، مثل <code>409 SEAT_TAKEN</code>.</p>
+  <div class="api">
+    <div class="card"><h3>عام + الزبون <span class="chip" style="background:var(--tint);color:var(--primary)">Customer</span></h3>
+      <div class="ep"><span class="m post">POST</span>/auth/register</div>
+      <div class="ep"><span class="m post">POST</span>/auth/login</div>
+      <div class="ep"><span class="m get">GET</span>/cities</div>
+      <div class="ep"><span class="m get">GET</span>/trips?from&amp;to&amp;date&amp;class</div>
+      <div class="ep"><span class="m get">GET</span>/trips/:id</div>
+      <div class="ep"><span class="m post">POST</span>/bookings { tripId, seats, paymentRef }</div>
+      <div class="ep"><span class="m get">GET</span>/me/bookings</div>
+      <div class="ep"><span class="m post">POST</span>/bookings/:id/cancel</div>
+    </div>
+    <div class="card"><h3>الاستقبال <span class="chip" style="background:var(--accent-soft);color:var(--wait)">Admin + Reception</span></h3>
+      <div class="ep"><span class="m get">GET</span>/staff/trips?date</div>
+      <div class="ep"><span class="m post">POST</span>/staff/bookings</div>
+      <div class="ep"><span class="m patch">PATCH</span>/staff/bookings/:id/change-seat</div>
+      <div class="ep"><span class="m post">POST</span>/staff/bookings/:id/cancel</div>
+      <div class="ep"><span class="m get">GET</span>/staff/bookings?status=CANCELLED&amp;refunded=false</div>
+      <div class="ep"><span class="m patch">PATCH</span>/staff/bookings/:id/refund</div>
+      <div class="ep"><span class="m get">GET</span>/staff/trips/:id/manifest</div>
+    </div>
+    <div class="card"><h3>الإدارة <span class="chip" style="background:var(--biz-bg);color:var(--biz)">Admin</span></h3>
+      <div class="ep"><span class="m crud">CRUD</span>/admin/buses</div>
+      <div class="ep"><span class="m crud">CRUD</span>/admin/trips</div>
+      <div class="ep"><span class="m post">POST</span>/admin/trips/:id/cancel</div>
+      <div class="ep"><span class="m crud">CRUD</span>/admin/schedules</div>
+      <div class="ep"><span class="m crud">CRUD</span>/admin/receptionists</div>
+      <div class="ep"><span class="m get">GET</span>/admin/reports/occupancy</div>
+      <div class="ep"><span class="m get">GET</span>/admin/reports/revenue</div>
+    </div>
+  </div>
+</section>
+
+<!-- PLAN -->
+<section id="plan">
+  <span class="eyebrow">التنفيذ</span>
+  <h2>المراحل</h2>
+  <div class="two">
+    <div class="phases">
+      <div class="phase done"><b>0 · التحضير</b><small>الدراسة التحليلية، تصميم Figma، وإعداد الريبو بـ TypeScript في الأجزاء الثلاثة. ✓</small></div>
+      <div class="phase"><b>1 · الأساس</b><small>تسجيل الدخول والأدوار، ثوابت المحافظات وأنواع البولمانات، مولّد المخطط، وإدارة الباصات.</small></div>
+      <div class="phase"><b>2 · الرحلات</b><small>إنشاء وتعديل الرحلات، الجداول المجدولة، وJob التوليد اليومي.</small></div>
+      <div class="phase"><b>3 · الحجز</b><small>الحجز والإلغاء والدفع وقائمة الركاب.</small></div>
+      <div class="phase"><b>4 · الواجهات</b><small>لوحة الإدارة والاستقبال بـ Next.js، وتطبيق الزبون بـ Expo.</small></div>
+      <div class="phase"><b>5 · الإطلاق</b><small>التقارير، بيانات تجريبية، نشر تجريبي، وREADME.</small></div>
+    </div>
+    <div class="card" style="display:flex;flex-direction:column;gap:12px">
+      <h3>التقنيات المستخدمة</h3>
+      <ul class="points">
+        <li><div><b>Backend</b><small>Express 5 · TypeScript · MongoDB + Mongoose · JWT · bcrypt · node-cron · zod</small></div></li>
+        <li><div><b>Web</b><small>Next.js (App Router) · TypeScript · Tailwind CSS</small></div></li>
+        <li><div><b>Mobile</b><small>React Native · Expo · TypeScript</small></div></li>
+        <li><div><b>Repo</b><small>ريبو واحد: <code>backend/</code> · <code>web/</code> · <code>mobile/</code>، وكل شخص على فرع <code>feat/…</code> مع PR.</small></div></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <span>رحلتي · دراسة حالة نظام حجز رحلات البولمان بين المحافظات</span>
+  <span class="mono">github.com/hasan123dayoub-del/bus-booking-system</span>
+</footer>
+
+</div>
+
+<script>
+// Theme toggle (follows the system until the user picks)
+const root = document.documentElement, btn = document.getElementById('themeBtn');
+const isDark = () => root.dataset.theme ? root.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+const label = () => { btn.textContent = isDark() ? 'الوضع النهاري' : 'الوضع الليلي'; };
+btn.addEventListener('click', () => { root.dataset.theme = isDark() ? 'light' : 'dark'; label(); });
+label();
+
+// Seat maps built from class + size, the same rule as buildSeatMap(class, size)
+const LAYOUTS = { regular: [2, 2, true], first: [2, 1, false], business: [1, 1, false] };
+document.querySelectorAll('.bus[data-class]').forEach(el => {
+  const [left, right, backMiddle] = LAYOUTS[el.dataset.class];
+  const rows = el.dataset.size === 'medium' ? 9 : 11;
+  const set = k => new Set((el.dataset[k] || '').split(',').filter(Boolean).map(Number));
+  const booked = set('booked'), selected = set('selected');
+  const seat = n => `<span class="seat ${selected.has(n) ? 'sel' : booked.has(n) ? 'bk' : ''}">${n}</span>`;
+  let html = '<div class="bus-front"><span>الباب</span><span class="seat drv">⎈</span></div>', n = 1;
+  for (let r = 1; r <= rows; r++) {
+    let row = '<div class="bus-row">';
+    for (let i = 0; i < left; i++) row += seat(n++);
+    row += r === rows && backMiddle ? seat(n++) : '<span class="aisle"></span>';
+    for (let i = 0; i < right; i++) row += seat(n++);
+    html += row + '</div>';
+  }
+  el.innerHTML = html;
+});
+
+// Screens: mobile / web tabs, and one web screen at a time
+const WEB = [
+  ['w1-login', 'دخول الموظفين', 'login', 'صفحة واحدة للإدارة والاستقبال. الصلاحيات تُحدَّد من دور الحساب.'],
+  ['w2-reception-booking', 'الحجز السريع', 'reception/booking', 'موظف الاستقبال: الرحلات، مخطط المقاعد، بيانات الزبون، والدفع نقداً أو بشام كاش.'],
+  ['w3-bookings-manifest', 'الحجوزات وقائمة الركاب', 'reception/bookings', 'كل الحجوزات مع الفلترة، وقائمة ركاب الرحلة المختارة بجانبها.'],
+  ['w4-dashboard', 'لوحة التحكم', 'admin', 'حجوزات وإيرادات وإشغال اليوم، الإيراد خلال الأسبوع، والإشغال حسب الخط.'],
+  ['w4b-add-receptionist', 'إضافة موظف', 'admin/receptionists/new', 'المدير ينشئ حساب موظف استقبال بكلمة مرور مؤقتة.'],
+  ['w5-buses', 'الباصات', 'admin/buses', 'الدرجة والحجم يحددان المخطط تلقائياً، مع معاينة فورية.'],
+  ['w6-trips', 'الرحلات', 'admin/trips', 'الرحلات اليدوية والمولّدة، مع السعر والإشغال والحالة.'],
+  ['w6b-schedules', 'الجداول المجدولة', 'admin/schedules', 'قالب الرحلة وقاعدة التكرار، وتُولَّد رحلات 30 يوماً قادمة.'],
+];
+const webTabs = document.getElementById('webTabs');
+const showWeb = i => {
+  const [file, title, url, cap] = WEB[i];
+  document.getElementById('webImg').src = 'screens/' + file + '.png';
+  document.getElementById('webImg').alt = title;
+  document.getElementById('webUrl').textContent = 'rihlati.app/' + url;
+  document.getElementById('webCap').textContent = cap;
+  [...webTabs.children].forEach((b, j) => b.setAttribute('aria-selected', String(i === j)));
+};
+WEB.forEach(([, title], i) => {
+  const b = document.createElement('button');
+  b.type = 'button'; b.setAttribute('role', 'tab'); b.textContent = title;
+  b.addEventListener('click', () => showWeb(i));
+  webTabs.appendChild(b);
+});
+showWeb(0);
+// Print shows every web screen at once
+document.getElementById('printWeb').innerHTML = WEB.map(([file, title, url, cap]) =>
+  `<figure><div class="browser"><div class="chrome"><i></i><i></i><i></i><span class="url">rihlati.app/${url}</span></div><img src="screens/${file}.png" alt="${title}"></div><figcaption><b>${title}</b>${cap}</figcaption></figure>`).join('');
+document.querySelectorAll('.tabs button').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('.tabs button').forEach(x => x.setAttribute('aria-selected', String(x === b)));
+  document.getElementById('tab-mobile').hidden = b.dataset.tab !== 'mobile';
+  document.getElementById('tab-web').hidden = b.dataset.tab !== 'web';
+}));
+
+// ERD: boxes from field lists, orthogonal links with one (||) and many (crow's foot) ends
+const ERD = {
+  users: { x: 20, y: 40, ar: 'المستخدمون', core: true, f: [['_id', 'ObjectId', 'PK'], ['name', 'string'], ['phone', 'string · unique'], ['passwordHash', 'string'], ['role', 'enum'], ['active', 'bool']] },
+  bookings: { x: 340, y: 40, ar: 'الحجوزات', core: true, f: [['_id', 'ObjectId', 'PK'], ['code', 'string · unique'], ['tripId', 'ObjectId', 'FK'], ['customerId', 'ObjectId', 'FK'], ['createdBy', 'ObjectId', 'FK'], ['seats', 'embedded[]'], ['seatPrice · total', 'number'], ['paymentMethod', 'enum'], ['paymentRef', 'string'], ['channel · status', 'enum'], ['cancelledAt', 'date?'], ['refunded', 'bool']] },
+  trips: { x: 660, y: 40, ar: 'الرحلات', core: true, f: [['_id', 'ObjectId', 'PK'], ['busId', 'ObjectId', 'FK'], ['scheduleId', 'ObjectId?', 'FK'], ['from · to', 'enum'], ['seatPrice', 'number'], ['departureAt', 'date'], ['bookedSeats', 'number[]'], ['status', 'enum']] },
+  buses: { x: 970, y: 40, ar: 'الباصات', f: [['_id', 'ObjectId', 'PK'], ['plateNumber', 'string · unique'], ['busClass', 'enum'], ['size', 'enum'], ['status', 'enum']] },
+  tripschedules: { x: 970, y: 290, ar: 'الجداول المجدولة', f: [['_id', 'ObjectId', 'PK'], ['from · to', 'enum'], ['busId', 'ObjectId', 'FK'], ['seatPrice', 'number'], ['departureTime', '"HH:mm"'], ['frequency', 'enum'], ['days', 'array'], ['startDate · endDate', 'date'], ['active', 'bool']] },
+};
+// [one side: entity, field, edge], [many side: entity, field, edge], x of the vertical segment
+const LINKS = [
+  [['users', '_id', 'r'], ['bookings', 'customerId', 'l'], 305],
+  [['users', '_id', 'r'], ['bookings', 'createdBy', 'l'], 305],
+  [['trips', '_id', 'l'], ['bookings', 'tripId', 'r'], 625],
+  [['buses', '_id', 'l'], ['trips', 'busId', 'r'], 945],
+  [['tripschedules', '_id', 'l'], ['trips', 'scheduleId', 'r'], 925],
+  [['buses', '_id', 'r'], ['tripschedules', 'busId', 'r'], 1232],
+];
+(function drawErd() {
+  const W = 250, HEAD = 44, ROW = 26;
+  const rowY = (e, name) => ERD[e].y + HEAD + ERD[e].f.findIndex(f => f[0] === name) * ROW + ROW / 2;
+  const edgeX = (e, side) => side === 'r' ? ERD[e].x + W : ERD[e].x;
+  let s = `<defs>
+    <marker id="one" viewBox="0 0 14 14" refX="1" refY="7" markerWidth="14" markerHeight="14" markerUnits="userSpaceOnUse" orient="auto"><path d="M5 1V13M9 1V13" class="erd-mark"/></marker>
+    <marker id="many" viewBox="0 0 14 14" refX="13" refY="7" markerWidth="14" markerHeight="14" markerUnits="userSpaceOnUse" orient="auto"><path d="M1 7 13 1M1 7 13 13M1 7H13" class="erd-mark"/></marker>
+  </defs>`;
+  for (const [[e1, f1, s1], [e2, f2, s2], tx] of LINKS) {
+    s += `<path class="erd-rel" d="M${edgeX(e1, s1)},${rowY(e1, f1)} H${tx} V${rowY(e2, f2)} H${edgeX(e2, s2)}" marker-start="url(#one)" marker-end="url(#many)"/>`;
+  }
+  for (const [name, e] of Object.entries(ERD)) {
+    const h = HEAD + e.f.length * ROW;
+    s += `<g><rect class="erd-box" x="${e.x}" y="${e.y}" width="${W}" height="${h}" rx="10"/>`;
+    s += `<rect class="erd-head${e.core ? ' core' : ''}" x="${e.x}" y="${e.y}" width="${W}" height="${HEAD}" rx="10"/><rect class="erd-head${e.core ? ' core' : ''}" x="${e.x}" y="${e.y + HEAD - 10}" width="${W}" height="10"/>`;
+    s += `<text class="erd-title" x="${e.x + 14}" y="${e.y + 27}">${name}</text><text class="erd-sub" x="${e.x + W - 14}" y="${e.y + 27}" text-anchor="end">${e.ar}</text>`;
+    e.f.forEach(([field, type, key], i) => {
+      const y = e.y + HEAD + i * ROW;
+      if (key === 'FK') s += `<rect class="erd-fkrow" x="${e.x + 1}" y="${y}" width="${W - 2}" height="${ROW}"/>`;
+      if (i) s += `<line class="erd-sep" x1="${e.x}" x2="${e.x + W}" y1="${y}" y2="${y}"/>`;
+      if (key) s += `<text class="erd-k ${key.toLowerCase()}" x="${e.x + 12}" y="${y + 17}">${key}</text>`;
+      s += `<text class="erd-field" x="${e.x + 38}" y="${y + 17}">${field}</text><text class="erd-type" x="${e.x + W - 12}" y="${y + 17}" text-anchor="end">${type}</text>`;
+    });
+    s += `</g>`;
+  }
+  document.getElementById('erd').innerHTML = s;
+})();
+</script>
+</body>
+</html>
