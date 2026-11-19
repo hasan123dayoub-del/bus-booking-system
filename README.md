@@ -2,7 +2,16 @@
 
 Full-stack booking system for an intercity bus company in Syria: trips and recurring schedules, seat-map booking, cash and Sham Cash payments, and three roles.
 
-> **Status:** the backend API and the web dashboard (admin + reception) are done. The customer mobile app is next.
+> **Status:** the backend API, the web dashboard (admin + reception) and the customer mobile app work end to end.
+
+## Documents
+
+| | |
+| :--- | :--- |
+| 🎬 **Demo video** (1 min) | [docs/demo/rihlati-demo.mp4](docs/demo/rihlati-demo.mp4): the customer books from the app, the seats show as booked at reception, then the admin dashboard |
+| 📊 **Presentation** | [docs/presentation/Rihlati-Pitch-EN.pdf](docs/presentation/Rihlati-Pitch-EN.pdf) |
+| 📘 **Case study** | [docs/case-study/rihlati-case-study.pdf](docs/case-study/rihlati-case-study.pdf) (also as [HTML](docs/case-study/index.html)): problem, roles, data model, booking rules, API and every screen |
+| 🖼️ **Screens** | [docs/case-study/screens](docs/case-study/screens): 9 mobile and 8 web screens from the Figma design |
 
 ---
 
@@ -64,7 +73,8 @@ Five collections: `users`, `buses`, `trips`, `tripschedules`, `bookings`. Passen
 bus-booking-system/
 ├── backend/     # Express + MongoDB API
 ├── web/         # Next.js: Admin + Receptionist
-└── mobile/      # React Native (Expo): Customer
+├── mobile/      # React Native (Expo): Customer
+└── docs/        # Case study, presentation, demo video
 ```
 
 ## API
@@ -112,9 +122,10 @@ For a real deployment use `npm run seed:admin` instead, which only creates the a
 - [x] Analysis
 - [x] UI design
 - [x] Project setup (TypeScript in all three parts)
-- [ ] Backend: auth and roles, buses, trips, schedules, bookings
-- [ ] Web dashboard (Admin + Receptionist)
-- [ ] Mobile app (Customer)
+- [x] Backend: auth and roles, buses, trips, schedules, bookings
+- [x] Web dashboard (Admin + Receptionist)
+- [x] Mobile app (Customer)
+- [x] Case study, presentation and demo video
 - [ ] Live demo
 
 ## License
