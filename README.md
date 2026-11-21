@@ -1,5 +1,7 @@
 # Bus Booking System
 
+[![CI](https://github.com/hasan123dayoub-del/bus-booking-system/actions/workflows/ci.yml/badge.svg)](https://github.com/hasan123dayoub-del/bus-booking-system/actions/workflows/ci.yml)
+
 Full-stack booking system for an intercity bus company in Syria: trips and recurring schedules, seat-map booking, cash and Sham Cash payments, and three roles.
 
 > **Status:** the backend API, the web dashboard (admin + reception) and the customer mobile app work end to end.
@@ -15,6 +17,20 @@ Full-stack booking system for an intercity bus company in Syria: trips and recur
 Demo accounts, password `Rihlati123` for all: admin `0900000000`, reception `0944120981`, customer `0944123456`. The demo data resets every night.
 
 Hosting: Vercel (the API runs as one serverless function, next to its MongoDB Atlas database; a nightly Vercel Cron resets the demo and generates the next 30 days of trips).
+
+## My contribution
+
+A team of 3 at Bytes4Future (Aga Khan Foundation), November 2026. I led the project; my teammates built the first versions of the mobile app and the web screens and started the backend.
+
+- **Lead:** the analysis and the UI design, the repository setup (backend, web and mobile in TypeScript), the branch workflow, and reviewing and merging the team's pull requests.
+- **API:** completed the backend: 40 REST endpoints in Express 5 + TypeScript, in layers (routes → Zod validation → controllers → services → Mongoose), 5 MongoDB models, JWT auth for 3 roles (admin, reception, customer), and Syrian phone numbers accepted in Latin or Arabic-Indic digits.
+- **No double booking:** a seat is reserved with one atomic conditional update on the trip, so two people racing for the same seat can never both get it. Measured and tested: 50 parallel requests for one seat give exactly 1 booking and 49 clean `409` answers.
+- **Schedules:** daily, weekly and monthly trip schedules that generate the next 30 days of trips (safe to run twice), and trips that switch to *departed* on their own.
+- **Dashboard:** rebuilt the Next.js 16 admin and reception dashboard from the Figma screens: desk booking, passenger lists, buses, trips, schedules, staff and reports.
+- **Mobile:** updated the Expo app to SDK 58 and updated its screens.
+- **Quality:** automated seat-race tests against a real MongoDB, and GitHub Actions that test the API and build the dashboard and the app on every push.
+- **Deployment:** all three on Vercel (the API as a serverless function next to its MongoDB Atlas database), with a nightly Vercel Cron that resets the demo data.
+- **Docs:** the case study, the presentation and the demo video.
 
 ## Documents
 
@@ -112,6 +128,7 @@ Needs Node.js 20+ and MongoDB (local, or a MongoDB Atlas connection string).
 cd backend
 npm install
 cp .env.example .env
+npm test            # seat-race tests (needs MONGODB_URI; wipes that database)
 npm run seed:demo   # optional: demo staff, buses, schedules, two weeks of bookings (deletes the database first)
 npm run dev
 
