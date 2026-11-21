@@ -20,14 +20,14 @@ Hosting: Vercel (the API runs as one serverless function, next to its MongoDB At
 
 ## My contribution
 
-A team of 3 at Bytes4Future (Aga Khan Foundation), November 2026. I led the project; my teammates built the first versions of the mobile app and the web screens and started the backend.
+A team of 3 at Bytes4Future (Aga Khan Foundation), November 2026. I led the project and wrote **83% of the final code** (measured with `git blame` on the source: 99% of the web dashboard, 75% of the API and 67% of the mobile app). My teammates wrote the first versions of the mobile app and the web screens and started the backend; I reworked those parts as well.
 
 - **Lead:** the analysis and the UI design, the repository setup (backend, web and mobile in TypeScript), the branch workflow, and reviewing and merging the team's pull requests.
 - **API:** completed the backend: 40 REST endpoints in Express 5 + TypeScript, in layers (routes → Zod validation → controllers → services → Mongoose), 5 MongoDB models, JWT auth for 3 roles (admin, reception, customer), and Syrian phone numbers accepted in Latin or Arabic-Indic digits.
 - **No double booking:** a seat is reserved with one atomic conditional update on the trip, so two people racing for the same seat can never both get it. Measured and tested: 50 parallel requests for one seat give exactly 1 booking and 49 clean `409` answers.
 - **Schedules:** daily, weekly and monthly trip schedules that generate the next 30 days of trips (safe to run twice), and trips that switch to *departed* on their own.
 - **Dashboard:** rebuilt the Next.js 16 admin and reception dashboard from the Figma screens: desk booking, passenger lists, buses, trips, schedules, staff and reports.
-- **Mobile:** updated the Expo app to SDK 58 and updated its screens.
+- **Mobile:** reworked the React Native (Expo) customer app (67% of its final code) and updated it to SDK 58.
 - **Quality:** automated seat-race tests against a real MongoDB, and GitHub Actions that test the API and build the dashboard and the app on every push.
 - **Deployment:** all three on Vercel (the API as a serverless function next to its MongoDB Atlas database), with a nightly Vercel Cron that resets the demo data.
 - **Docs:** the case study, the presentation and the demo video.
