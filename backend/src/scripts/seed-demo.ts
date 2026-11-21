@@ -1,6 +1,6 @@
 /**
  * Fills a LOCAL database with demo data (staff, buses, schedules, two weeks of trips and bookings).
- * It deletes everything first, so it refuses to run in production.
+ * It deletes everything first, so it refuses to run in production (except the public demo, see DEMO_MODE).
  *
  *   npm run seed:demo
  */
@@ -26,9 +26,9 @@ const FIRST = ["سامر", "ريما", "يوسف", "هدى", "محمد", "لين
 const LAST = ["الأحمد", "خليل", "درويش", "العلي", "ناصر", "صالح", "حداد", "الحسن", "منصور", "عيسى", "شاهين", "الخطيب", "سليمان", "يوسف"];
 const phone = () => `+9639${[3, 4, 5, 8, 9][Math.floor(rand() * 5)]}${String(Math.floor(rand() * 1e7)).padStart(7, "0")}`;
 
-async function main() {
-  if (env.NODE_ENV === "production") throw new Error("seed:demo deletes all data; not allowed in production");
-  await connectDB();
+/** Deletes everything and fills the demo data. The caller opens the database connection. */
+export async function seedDemo() {
+  state = 20261106; // same data on every run, also when a warm serverless instance runs it again
   for (const m of [User, Bus, Trip, TripSchedule, Booking] as unknown as { deleteMany: (f: object) => Promise<unknown> }[]) await m.deleteMany({});
 
   const hash = await bcrypt.hash(DEMO_PASSWORD, 10);
@@ -154,10 +154,19 @@ async function main() {
 
   console.log(`Demo data ready: ${trips.length} trips with bookings, ${count} bookings.`);
   console.log(`Logins (password ${DEMO_PASSWORD}): admin 0900000000, reception 0944120981`);
+}
+
+// Production refuses, except the public demo deployment (DEMO_MODE=true), which resets itself every night
+async function main() {
+  if (env.NODE_ENV === "production" && process.env.DEMO_MODE !== "true") {
+    throw new Error("seed:demo deletes all data; not allowed in production");
+  }
+  await connectDB();
+  await seedDemo();
   await disconnectDB();
 }
 
-main().catch(async (e) => {
+if (require.main === module) main().catch(async (e) => {
   console.error(e);
   await disconnectDB();
   process.exit(1);

@@ -1,0 +1,16 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "installCommand": "npm ci --include=dev",
+  "buildCommand": "npm run build && mkdir -p public && printf 'User-agent: *\nDisallow: /\n' > public/robots.txt",
+  "outputDirectory": "public",
+  "regions": ["iad1"],
+  "functions": {
+    "api/index.js": {
+      "maxDuration": 300,
+      "includeFiles": "dist/**"
+    }
+  },
+  "crons": [{ "path": "/api/cron/nightly", "schedule": "30 21 * * *" }],
+  "rewrites": [{ "source": "/(.*)", "destination": "/api" }]
+}
