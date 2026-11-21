@@ -4,7 +4,7 @@
   "installCommand": "npm ci --include=dev",
   "buildCommand": "npm run build && mkdir -p public && printf 'User-agent: *\nDisallow: /\n' > public/robots.txt",
   "outputDirectory": "public",
-  "regions": ["fra1"],
+  "regions": ["iad1"],
   "functions": {
     "api/index.js": {
       "maxDuration": 300,
