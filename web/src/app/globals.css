@@ -377,6 +377,12 @@ b.low { color: var(--amber); }
 .login-form .input-wrap > input { height: 54px; background: #fff; }
 .login-note { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 12.5px; }
 .login-note svg { color: var(--primary); }
+.demo-box { border: 1px dashed var(--primary); border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
+.demo-title { font-weight: 700; font-size: 13.5px; }
+.demo-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+.demo-btn { border: 1px solid var(--primary); color: var(--primary); background: transparent; padding: 7px 18px; font-size: 14px; }
+.demo-btn:hover { background: var(--primary); color: #fff; }
+.demo-hint { color: var(--muted); font-size: 12px; text-align: right; }
 .login-hero {
   background: #0b3d31 url("/login-buses.jpg") center / cover no-repeat;
   min-height: 100vh;
