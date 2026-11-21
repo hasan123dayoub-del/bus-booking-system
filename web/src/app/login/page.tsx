@@ -8,6 +8,14 @@ import { Alert, Field } from "@/components/ui";
 import { errorMessage } from "@/lib/api";
 import { homeFor, useAuth } from "@/lib/auth";
 
+// The public demo (NEXT_PUBLIC_DEMO=true) lists its seeded accounts so visitors can sign in with one click.
+const DEMO = process.env.NEXT_PUBLIC_DEMO === "true";
+const DEMO_PASSWORD = "Rihlati123";
+const DEMO_ACCOUNTS = [
+  ["الإدارة", "0900000000"],
+  ["الاستقبال", "0944120981"],
+] as const;
+
 export default function LoginPage() {
   const { session, loading, login, logout } = useAuth();
   const router = useRouter();
@@ -93,6 +101,29 @@ export default function LoginPage() {
             <Icon name="shield" size={16} />
             هذه اللوحة مخصصة للإدارة وموظفي الاستقبال فقط
           </p>
+
+          {DEMO && (
+            <div className="demo-box">
+              <p className="demo-title">حسابات تجريبية · Demo accounts</p>
+              <div className="demo-buttons">
+                {DEMO_ACCOUNTS.map(([role, demoPhone]) => (
+                  <button
+                    key={role}
+                    type="button"
+                    className="btn demo-btn"
+                    onClick={() => {
+                      setPhone(demoPhone);
+                      setPassword(DEMO_PASSWORD);
+                      setError("");
+                    }}
+                  >
+                    {role}
+                  </button>
+                ))}
+              </div>
+              <p className="demo-hint" dir="ltr">Password {DEMO_PASSWORD} · demo data resets every night</p>
+            </div>
+          )}
         </form>
       </section>
 

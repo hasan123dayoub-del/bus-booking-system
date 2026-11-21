@@ -6,6 +6,11 @@ import { Button, ErrorText, T } from '../components/ui';
 import { authenticate, goToAuth, safeRedirect } from '../lib/auth';
 import { colors } from '../theme';
 
+// The public demo (EXPO_PUBLIC_DEMO=true) fills in a seeded customer account with one tap.
+const DEMO = process.env.EXPO_PUBLIC_DEMO === 'true';
+const DEMO_PHONE = '944123456';
+const DEMO_PASSWORD = 'Rihlati123';
+
 export default function SignInScreen() {
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
@@ -49,6 +54,21 @@ export default function SignInScreen() {
       <View>
         <Button label="تسجيل الدخول" onPress={submit} busy={busy} />
       </View>
+      {DEMO && (
+        <View style={{ gap: 6 }}>
+          <Button
+            label="حساب زبون تجريبي · Demo customer"
+            icon="person-outline"
+            variant="outline"
+            onPress={() => {
+              setPhone(DEMO_PHONE);
+              setPassword(DEMO_PASSWORD);
+              setError('');
+            }}
+          />
+          <T size={12} color={colors.muted} style={{ textAlign: 'center' }}>Password {DEMO_PASSWORD} · demo data resets every night</T>
+        </View>
+      )}
     </AuthScreen>
   );
 }
