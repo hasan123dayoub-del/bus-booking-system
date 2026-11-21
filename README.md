@@ -4,6 +4,18 @@ Full-stack booking system for an intercity bus company in Syria: trips and recur
 
 > **Status:** the backend API, the web dashboard (admin + reception) and the customer mobile app work end to end.
 
+## Live Demo
+
+| | |
+|---|---|
+| 📱 **Customer app** (web build of the React Native app) | [rihlati-hasan.vercel.app](https://rihlati-hasan.vercel.app) |
+| 🖥️ **Admin + reception dashboard** | [rihlati-dashboard-hasan.vercel.app](https://rihlati-dashboard-hasan.vercel.app) |
+| ⚙️ **API** (home page lists the demo accounts) | [rihlati-api-hasan.vercel.app](https://rihlati-api-hasan.vercel.app) |
+
+Demo accounts, password `Rihlati123` for all: admin `0900000000`, reception `0944120981`, customer `0944123456`. The demo data resets every night.
+
+Hosting: Vercel (the API runs as one serverless function, next to its MongoDB Atlas database; a nightly Vercel Cron resets the demo and generates the next 30 days of trips).
+
 ## Documents
 
 | | |
@@ -126,7 +138,7 @@ For a real deployment use `npm run seed:admin` instead, which only creates the a
 - [x] Web dashboard (Admin + Receptionist)
 - [x] Mobile app (Customer)
 - [x] Case study, presentation and demo video
-- [ ] Live demo
+- [x] Live demo on Vercel
 
 ## License
 
